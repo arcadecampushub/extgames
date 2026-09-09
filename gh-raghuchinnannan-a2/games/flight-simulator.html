@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Flight Simulator | A2.games</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicons/flight.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; font-family: Arial, sans-serif; }
+
+    #hud {
+      position: absolute; top: 20px; left: 20px;
+      color: white; font-size: 18px; font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+      z-index: 10; display: none; line-height: 1.85;
+    }
+    #highScoreDisplay {
+      position: absolute; top: 20px; right: 160px;
+      color: white; font-size: 18px; font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.9); z-index: 10;
+    }
+    .zen-badge {
+      background: #00bcd4; color: white;
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 12px; vertical-align: middle;
+      margin-left: 6px; letter-spacing: 1px;
+      font-style: normal;
+    }
+    #comboPopup {
+      position: absolute; top: 20%; left: 50%;
+      transform: translateX(-50%);
+      font-size: 30px; font-weight: bold;
+      text-shadow: 0 0 20px currentColor;
+      opacity: 0; transition: opacity 0.35s ease;
+      pointer-events: none; z-index: 50;
+      letter-spacing: 2px;
+    }
+    #nearMissPopup {
+      position: absolute; top: 27%; left: 50%;
+      transform: translateX(-50%);
+      font-size: 22px; font-weight: bold;
+      color: #ffd700; text-shadow: 0 0 14px #ffd700;
+      opacity: 0; transition: opacity 0.35s ease;
+      pointer-events: none; z-index: 50;
+      letter-spacing: 1px; white-space: nowrap;
+    }
+
+    /* ── Screen flash (milestone) ─────────────────────────────────────────── */
+    #screenFlash {
+      position: absolute; inset: 0;
+      background: #ffd700; opacity: 0;
+      pointer-events: none; z-index: 140;
+      transition: opacity 0.5s ease;
+    }
+
+    /* ── Achievement badge popup ──────────────────────────────────────────── */
+    #badgePopup {
+      position: absolute; top: 70px; right: 20px;
+      transform: translateX(calc(100% + 30px));
+      background: rgba(10,10,20,0.93);
+      border: 2px solid #ffd700; border-radius: 12px;
+      padding: 10px 14px; display: flex; align-items: center; gap: 11px;
+      color: white; z-index: 200; max-width: 235px;
+      box-shadow: 0 4px 24px rgba(255,215,0,0.35);
+      transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #badgePopup.show { transform: translateX(0); }
+    .badge-icon  { font-size: 26px; flex-shrink: 0; }
+    .badge-text  { display: flex; flex-direction: column; min-width: 0; }
+    .badge-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1.6px; color: #ffd700; margin-bottom: 2px; }
+    .badge-name  { font-size: 14px; font-weight: bold; }
+    .badge-desc  { font-size: 11px; opacity: 0.62; margin-top: 1px; }
+
+    /* ── Milestone popup ─────────────────────────────────────────────────── */
+    #milestonePopup {
+      position: absolute; top: 40%; left: 50%;
+      transform: translateX(-50%);
+      text-align: center; white-space: nowrap;
+      pointer-events: none; z-index: 75;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .milestone-score { font-size: 54px; font-weight: bold; text-shadow: 0 0 32px currentColor; }
+    .milestone-msg   { font-size: 24px; color: white; font-weight: bold;
+                       text-shadow: 0 0 14px rgba(255,255,255,0.8); margin-top: 2px; }
+
+    .overlay {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: white; text-align: center;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      z-index: 100; background: rgba(0,0,0,0.78);
+      padding: 40px; border-radius: 15px; max-width: 92%;
+    }
+    #startScreen h1 { margin-bottom: 16px; font-size: 46px; color: #4CAF50; }
+    #startScreen p  { font-size: 17px; margin: 8px 0; line-height: 1.6; }
+    #gameOver    { display: none; }
+    #pauseScreen { display: none; font-size: 34px; font-weight: bold; }
+    #settingsScreen { display: none; min-width: 340px; }
+
+    .go-title { font-size: 44px; font-weight: bold; margin-bottom: 20px; }
+    .go-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px 24px; text-align: left; margin: 0 0 20px;
+      font-size: 18px;
+    }
+    .go-grid .label { opacity: 0.75; }
+    .go-grid .value { font-weight: bold; color: #7ecfff; text-align: right; }
+    .go-grid .value.gold { color: #ffd700; }
+
+    .button {
+      padding: 14px 28px; font-size: 22px;
+      background: #4CAF50; color: white;
+      border: none; border-radius: 5px; cursor: pointer;
+      margin-top: 16px; transition: background 0.3s;
+    }
+    .button:hover  { background: #45a049; }
+    .button:active { transform: scale(0.95); }
+    .button.zen-btn { background: #0097a7; }
+    .button.zen-btn:hover { background: #007c8c; }
+
+    .btn-ghost {
+      padding: 10px 22px; font-size: 17px;
+      background: rgba(255,255,255,0.12);
+      color: white; border: 2px solid rgba(255,255,255,0.35);
+      border-radius: 6px; cursor: pointer;
+      margin-top: 12px; transition: background 0.2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-ghost:hover  { background: rgba(255,255,255,0.22); }
+    .btn-ghost:active { transform: scale(0.96); }
+
+    #backButton {
+      position: absolute; top: 20px; right: 20px;
+      padding: 10px 20px; font-size: 16px;
+      background: #f44336; color: white;
+      border: none; border-radius: 5px; cursor: pointer;
+      z-index: 10; text-decoration: none; display: inline-block;
+    }
+    #backButton:hover { background: #da190b; }
+
+    #instructions {
+      position: absolute; bottom: 20px; left: 20px;
+      color: white; font-size: 15px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      z-index: 10; display: none;
+    }
+
+    #settingsScreen h2 { font-size: 24px; margin-bottom: 18px; }
+    .settings-section {
+      text-align: left; margin: 4px 0 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+    }
+    .settings-section:last-of-type { border-bottom: none; }
+    .settings-section h3 {
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1.2px; opacity: 0.55; margin-bottom: 10px;
+    }
+    .setting-row {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 20px;
+      font-size: 16px; margin: 10px 0;
+    }
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .toggle-track {
+      width: 50px; height: 26px; background: #555;
+      border-radius: 13px; position: relative;
+      transition: background 0.22s; flex-shrink: 0;
+    }
+    .toggle-track.on { background: #4CAF50; }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      background: white; border-radius: 50%;
+      transition: left 0.22s;
+    }
+    .toggle-track.on .toggle-thumb { left: 27px; }
+    .toggle-label { font-size: 13px; opacity: 0.75; min-width: 28px; }
+    .speed-control {
+      display: flex; align-items: center;
+      justify-content: center; gap: 16px; margin: 8px 0;
+    }
+    .speed-btn {
+      width: 38px; height: 38px; background: #555;
+      border: none; border-radius: 7px;
+      color: white; font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .speed-btn:hover  { background: #777; }
+    .speed-btn:active { transform: scale(0.93); }
+    .speed-val  { font-size: 22px; font-weight: bold; min-width: 54px; text-align: center; }
+    .speed-hint { font-size: 12px; opacity: 0.55; margin-top: 4px; }
+
+    .seg-control {
+      display: flex; gap: 4px;
+      background: rgba(0,0,0,0.35);
+      padding: 4px; border-radius: 8px; margin: 8px 0;
+    }
+    .seg-btn {
+      flex: 1; padding: 9px 6px;
+      background: transparent; border: none;
+      color: rgba(255,255,255,0.5);
+      border-radius: 5px; cursor: pointer;
+      font-size: 14px; font-weight: bold;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .seg-btn.active { background: #4CAF50; color: white; }
+    .seg-btn:hover:not(.active) { background: rgba(255,255,255,0.12); color: white; }
+
+    #touchControls {
+      position: absolute; bottom: 30px; right: 30px;
+      display: none; z-index: 20; user-select: none;
+    }
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(3, 64px);
+      gap: 4px;
+    }
+    .dpad-btn {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,0.25);
+      border: 2px solid rgba(255,255,255,0.55);
+      border-radius: 12px; font-size: 28px; color: white;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active { background: rgba(255,255,255,0.5); }
+    .dpad-empty { background: none !important; border: none !important; pointer-events: none; }
+
+    @media (max-width: 768px) {
+      #startScreen h1 { font-size: 30px; }
+      #startScreen    { padding: 28px 18px; }
+      #startScreen p  { font-size: 14px; }
+      .go-title       { font-size: 32px; }
+      .button         { font-size: 18px; padding: 12px 22px; }
+      #hud            { font-size: 14px; }
+      #highScoreDisplay { right: 20px; top: 66px; font-size: 14px; }
+      #settingsScreen   { min-width: unset; width: 88vw; }
+    }
+  </style>
+</head>
+<body>
+  <a href="../index.html" id="backButton">← Back</a>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="scoreDisplay">Score: 0</div>
+    <div id="accuracyDisplay">Accuracy: —</div>
+    <div id="distDisplay">Dist: 0 m</div>
+    <div id="flightDisplay">Alt: 500 m | 0.3×</div>
+    <div id="liveDisplay">❤️❤️❤️</div>
+  </div>
+  <div id="highScoreDisplay">Best: 0</div>
+
+  <!-- Combo / near-miss popups -->
+  <div id="comboPopup"></div>
+  <div id="nearMissPopup"></div>
+
+  <!-- Screen flash + achievement badge + milestone -->
+  <div id="screenFlash"></div>
+  <div id="badgePopup">
+    <div class="badge-icon" id="badgeIcon">🏆</div>
+    <div class="badge-text">
+      <div class="badge-title">Achievement Unlocked</div>
+      <div class="badge-name" id="badgeName"></div>
+      <div class="badge-desc" id="badgeDesc"></div>
+    </div>
+  </div>
+  <div id="milestonePopup">
+    <div class="milestone-score" id="milestoneScore"></div>
+    <div class="milestone-msg"   id="milestoneMsg"></div>
+  </div>
+
+  <!-- Start screen -->
+  <div id="startScreen" class="overlay">
+    <h1>✈️ 3D Flight Simulator</h1>
+    <p><strong>Fly through the rings to score!</strong></p>
+    <p>⬆️⬇️⬅️➡️ &nbsp;Arrow keys (or D-pad on mobile)</p>
+    <p>💥 Hit the ring frame = lose a life &nbsp;|&nbsp; 🟠 Going around = no score</p>
+    <p>🔥 Chain rings for ×2 / ×3 / ×4 combo &nbsp;|&nbsp; 🚀 Speed up every 5 rings</p>
+    <p>🔵 Blue rings move — watch out! &nbsp;|&nbsp; 🌟 Gold rings = 3 pts + slow speed</p>
+    <p>✨ Brush the inner edge for a Near-Miss +1 bonus!</p>
+    <button class="button" id="startButton">▶ Start Game</button><br>
+    <button class="button zen-btn" id="zenButton">🧘 Zen Mode</button><br>
+    <button class="btn-ghost" id="settingsBtnStart">⚙️ Settings</button>
+  </div>
+
+  <!-- Game over -->
+  <div id="gameOver" class="overlay">
+    <div class="go-title">Game Over!</div>
+    <div class="go-grid">
+      <span class="label">Score</span>
+      <span class="value" id="finalScore">0</span>
+      <span class="label">Rings flown</span>
+      <span class="value" id="finalRings">0 / 0</span>
+      <span class="label">Accuracy</span>
+      <span class="value" id="finalAccuracy">—</span>
+      <span class="label">Best combo</span>
+      <span class="value" id="finalCombo">0</span>
+      <span class="label">Distance</span>
+      <span class="value" id="finalDist">0 m</span>
+      <span class="label">Best score</span>
+      <span class="value gold" id="finalBest">0</span>
+    </div>
+    <div id="goBadgesRow" style="margin:6px 0 16px; min-height:32px;"></div>
+    <button class="button" id="restartButton">Restart</button>
+  </div>
+
+  <!-- Pause -->
+  <div id="pauseScreen" class="overlay">
+    ⏸️ Paused
+    <span style="font-size:20px; display:block; margin:12px 0;">
+      Press <strong>Esc</strong> to resume
+    </span>
+    <button class="btn-ghost" id="settingsBtnPause">⚙️ Settings</button><br>
+    <button class="btn-ghost" id="exitToMenuBtn" style="margin-top:8px;">🏠 Exit to Menu</button>
+  </div>
+
+  <!-- Settings -->
+  <div id="settingsScreen" class="overlay">
+    <h2>⚙️ Settings</h2>
+    <div class="settings-section">
+      <h3>Controls</h3>
+      <div class="setting-row">
+        <span>Invert Left / Right</span>
+        <div class="toggle-wrap" id="toggleX">
+          <div class="toggle-track" id="trackX"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label" id="labelX">OFF</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Invert Up / Down</span>
+        <div class="toggle-wrap" id="toggleY">
+          <div class="toggle-track" id="trackY"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label" id="labelY">OFF</span>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Starting Speed</h3>
+      <div class="speed-control">
+        <button class="speed-btn" id="speedDown">−</button>
+        <span class="speed-val" id="startSpeedVal">0.3×</span>
+        <button class="speed-btn" id="speedUp">+</button>
+      </div>
+      <div class="speed-hint">Range: 0.3× – 1.5× &nbsp;|&nbsp; increases as you score</div>
+    </div>
+    <div class="settings-section">
+      <h3>Ring Size</h3>
+      <div class="seg-control" id="ringSizeCtrl">
+        <button class="seg-btn" data-val="small">🔴 Small</button>
+        <button class="seg-btn" data-val="medium">🟠 Medium</button>
+        <button class="seg-btn" data-val="large">🟢 Large</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Ring Spacing</h3>
+      <div class="seg-control" id="ringSpacingCtrl">
+        <button class="seg-btn" data-val="close">⚡ Close</button>
+        <button class="seg-btn" data-val="normal">✈️ Normal</button>
+        <button class="seg-btn" data-val="far">🌄 Far</button>
+      </div>
+      <div class="speed-hint">Ring changes take effect on next game</div>
+    </div>
+    <div class="settings-section">
+      <h3>Sky Mode</h3>
+      <div class="seg-control" id="dayNightCtrl">
+        <button class="seg-btn" data-val="day">☀️ Day</button>
+        <button class="seg-btn" data-val="auto">🌅 Cycle</button>
+        <button class="seg-btn" data-val="night">🌙 Night</button>
+      </div>
+    </div>
+    <button class="button" id="closeSettings">Done</button>
+  </div>
+
+  <div id="instructions">Fly through rings · Chain for combo · Double-tap ← → = barrel roll · Esc = pause</div>
+
+  <!-- Mobile D-pad -->
+  <div id="touchControls">
+    <div class="dpad">
+      <div class="dpad-btn dpad-empty"></div>
+      <div class="dpad-btn" id="btnUp">↑</div>
+      <div class="dpad-btn dpad-empty"></div>
+      <div class="dpad-btn" id="btnLeft">←</div>
+      <div class="dpad-btn dpad-empty"></div>
+      <div class="dpad-btn" id="btnRight">→</div>
+      <div class="dpad-btn dpad-empty"></div>
+      <div class="dpad-btn" id="btnDown">↓</div>
+      <div class="dpad-btn dpad-empty"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ── Preferences ────────────────────────────────────────────────────────────
+    let invertX    = (localStorage.getItem('flightInvertX')  ?? 'true')  === 'true';
+    let invertY    = (localStorage.getItem('flightInvertY')  ?? 'false') === 'true';
+    let startSpeed = Math.min(1.5, Math.max(0.3,
+      parseFloat(localStorage.getItem('flightStartSpeed') || '0.3')));
+    let ringSize    = localStorage.getItem('flightRingSize')    || 'large';
+    let ringSpacing = localStorage.getItem('flightRingSpacing') || 'far';
+    let dayNightMode = localStorage.getItem('flightDayNight') || 'auto'; // 'day'|'night'|'auto'
+
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const MAX_LIVES         = 3;
+    const INVINCIBLE_FRAMES = 120;   // ~2 s at 60 fps
+    const TRAIL_LEN         = 28;    // contrail history length
+
+    // ── Game state ─────────────────────────────────────────────────────────────
+    let scene, camera, renderer;
+    let plane, skyBox, ground;
+    let obstacles = [], clouds = [], birds = [];
+    const mountains = [], treeGroups = [], cityBlocks = [];
+
+    let score            = 0;
+    let ringsScored      = 0;   // rings actually flown through (for accuracy / speed-up)
+    let speed            = startSpeed;
+    let distanceTraveled = 0;
+    let totalRings       = 0;
+    let highScore        = parseInt(localStorage.getItem('flightSimHighScore') || '0');
+    let gameState        = 'menu';
+    let settingsReturnTo = null;
+
+    // Combo multiplier
+    let combo    = 0;
+    let comboMax = 0;
+
+    // Gold ring counter (every 8th ring spawned/recycled is gold)
+    let ringSpawnCounter = 0;
+
+    // Lives / invincibility
+    let lives            = MAX_LIVES;
+    let invincible       = false;
+    let invincibleFrames = 0;
+
+    // Zen mode
+    let zenMode = false;
+
+    // Screen shake
+    let shakeFrames    = 0;
+    let shakeIntensity = 0;
+
+    // Audio
+    let audioCtx      = null;
+    let engineOsc     = null;   // primary drone
+    let engineOsc2    = null;   // slightly detuned for beating
+    let engineHarm    = null;   // sub-octave for depth
+    let engineFilter  = null;
+    let engineGain    = null;
+
+    // Adaptive beat
+    let _beatPlaying = false;
+    let _beatNext    = 0;
+    let _beatCount   = 0;
+    let _beatTimer   = null;
+    let _noiseCache  = null;
+
+    // Contrails
+    let leftTrailPts  = [];
+    let rightTrailPts = [];
+    let leftTrailLine  = null;
+    let rightTrailLine = null;
+
+    // Lights (stored for day/night animation)
+    let ambientLight, sunLight, hemiLight;
+
+    // Barrel roll
+    let barrelRoll = 0;   // frames remaining (0 = not rolling)
+    let barrelDir  = 1;   // +1 = left spin, -1 = right spin
+    const lastTapTime = {};
+
+    // ── Achievements ────────────────────────────────────────────────────────
+    const ACHIEVEMENTS = [
+      { id: 'first_blood',    icon: '🩸', label: 'First Blood',      desc: 'Score your very first point'      },
+      { id: 'sharpshooter',  icon: '🎯', label: 'Sharpshooter',     desc: '100% accuracy over 10+ rings'     },
+      { id: 'speed_demon',   icon: '⚡', label: 'Speed Demon',       desc: 'Hit 2× speed'                     },
+      { id: 'combo_king',    icon: '👑', label: 'Combo King',        desc: 'Reach ×4 Max Combo'               },
+      { id: 'gold_rush',     icon: '🌟', label: 'Gold Rush',         desc: 'Collect 3 gold rings in one run'  },
+      { id: 'near_miss_ace', icon: '✨', label: 'Near Miss Ace',     desc: 'Land 5 near-miss bonuses'         },
+      { id: 'ace_pilot',     icon: '🌀', label: 'Ace Pilot',         desc: 'Pull off a barrel roll'           },
+      { id: 'century',       icon: '💯', label: 'Century',           desc: 'Score 100 points'                 },
+      { id: 'zen_master',    icon: '🧘', label: 'Zen Master',        desc: 'Score 20 pts in Zen Mode'         },
+    ];
+    let earnedBadges  = new Set(JSON.parse(localStorage.getItem('flightBadges') || '[]'));
+    let _badgeQueue   = [], _badgeShowing = false, sessionBadges = [];
+
+    // Per-session achievement trackers
+    let goldRingsCollected = 0, nearMissCount = 0, barrelRollDone = false;
+
+    // ── Milestones ──────────────────────────────────────────────────────────
+    const MILESTONES     = [10, 25, 50, 100];
+    const MILESTONE_MSGS = {
+      10:  { msg: 'Taking Off! 🚀',  color: '#00ff88' },
+      25:  { msg: 'On a Roll! 🔥',   color: '#ff8800' },
+      50:  { msg: 'Sky High! ⭐',    color: '#ffd700' },
+      100: { msg: 'Legendary! 🏆',   color: '#ff44aa' },
+    };
+    let _triggeredMilestones = new Set();
+    let _burstParticles      = [];   // { mesh, life, maxLife }
+
+    // ── Sponsors ───────────────────────────────────────────────────────────────
+    let sponsors = [
+      { name: 'Textpro.xyz',  tagline: 'Free tools' },
+      { name: 'A2.games',     tagline: 'More games' },
+    ];
+    let _sponsorIdx = 0;
+    function _nextSponsor() { return sponsors[_sponsorIdx++ % sponsors.length]; }
+    const hotAirBalloons = [];
+
+    const keysDown  = {};
+    let targetBankZ = 0, targetBankX = 0;
+
+    // ── Day/night colour constants (pre-allocated to avoid GC) ─────────────────
+    const _dnDay    = { sky: new THREE.Color(0x87CEEB), zenith: new THREE.Color(0x4a8fd4) };
+    const _dnSunset = { sky: new THREE.Color(0xff7043), zenith: new THREE.Color(0xc84b17) };
+    const _dnNight  = { sky: new THREE.Color(0x0a1628), zenith: new THREE.Color(0x050a12) };
+    const _dnTmp    = new THREE.Color();
+
+    // ── Ring configuration ─────────────────────────────────────────────────────
+    const RING_SIZE = {
+      small:  { minR: 1.8, varR: 1.2 },
+      medium: { minR: 2.8, varR: 2.0 },
+      large:  { minR: 4.5, varR: 2.5 },
+    };
+    const RING_SPACING = {
+      close:  { base: 14, var: 6  },
+      normal: { base: 24, var: 10 },
+      far:    { base: 42, var: 18 },
+    };
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    function formatDist(d) {
+      const m = Math.round(d * 10);
+      return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : m + ' m';
+    }
+    function getAccuracy() {
+      return totalRings > 0 ? Math.round(ringsScored / totalRings * 100) + '%' : '—';
+    }
+    function getLivesHtml() {
+      if (zenMode) return '<span class="zen-badge">ZEN</span> ∞';
+      let h = '';
+      for (let i = 0; i < MAX_LIVES; i++) h += (i < lives ? '❤️' : '🖤');
+      return h;
+    }
+
+    // ── Audio ──────────────────────────────────────────────────────────────────
+    function initAudio() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch(e) {}
+    }
+
+    // ── Engine sound (3-oscillator drone through low-pass filter) ───────────────
+    function startEngineSound() {
+      if (!audioCtx || engineOsc) return;
+      const base = 55 + speed * 35;
+
+      engineFilter = audioCtx.createBiquadFilter();
+      engineFilter.type = 'lowpass';
+      engineFilter.frequency.value = 260 + speed * 80;
+      engineFilter.Q.value = 1.8;
+
+      engineGain = audioCtx.createGain();
+      engineGain.gain.value = 0.07;
+
+      engineOsc = audioCtx.createOscillator();        // primary sawtooth
+      engineOsc.type = 'sawtooth';
+      engineOsc.frequency.value = base;
+
+      engineOsc2 = audioCtx.createOscillator();       // slightly detuned = beating
+      engineOsc2.type = 'sawtooth';
+      engineOsc2.frequency.value = base + 4.5;
+
+      engineHarm = audioCtx.createOscillator();       // sub-octave sine for depth
+      engineHarm.type = 'sine';
+      engineHarm.frequency.value = base * 0.5;
+      const harmGain = audioCtx.createGain();
+      harmGain.gain.value = 0.55;
+
+      engineOsc.connect(engineFilter);
+      engineOsc2.connect(engineFilter);
+      engineHarm.connect(harmGain);
+      harmGain.connect(engineFilter);
+      engineFilter.connect(engineGain);
+      engineGain.connect(audioCtx.destination);
+
+      engineOsc.start(); engineOsc2.start(); engineHarm.start();
+    }
+    function updateEngineSound() {
+      if (!engineOsc) return;
+      const base = 55 + speed * 35;
+      engineOsc.frequency.value    = base;
+      engineOsc2.frequency.value   = base + 4.5;
+      engineHarm.frequency.value   = base * 0.5;
+      engineFilter.frequency.value = 260 + speed * 80;
+    }
+    function stopEngineSound() {
+      if (!engineOsc) return;
+      try { engineOsc.stop(); engineOsc2.stop(); engineHarm.stop(); } catch(e) {}
+      engineOsc.disconnect(); engineOsc2.disconnect(); engineHarm.disconnect();
+      engineFilter.disconnect(); engineGain.disconnect();
+      engineOsc = null; engineOsc2 = null; engineHarm = null;
+      engineFilter = null; engineGain = null;
+    }
+
+    // ── Noise buffer (cached, used by beat hi-hat) ──────────────────────────────
+    function _getNoise() {
+      if (_noiseCache) return _noiseCache;
+      if (!audioCtx) return null;
+      const len = Math.round(audioCtx.sampleRate * 0.5);
+      _noiseCache = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = _noiseCache.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      return _noiseCache;
+    }
+
+    // ── One-shot tone helper ────────────────────────────────────────────────────
+    function _tone(freq, type, vol, dur, freqEnd) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, audioCtx.currentTime + dur);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + dur);
+    }
+
+    // ── Ring pass: whoosh sweep → clean ding (pitch rises with combo) ───────────
+    function playRingSound(comboLevel) {
+      if (!audioCtx) return;
+      const dingFreq = 440 + (Math.min(comboLevel, 4) - 1) * 110;
+      const t = audioCtx.currentTime;
+      // Whoosh: descending sweep into the ding frequency
+      const wo = audioCtx.createOscillator(), wg = audioCtx.createGain();
+      wo.type = 'sine';
+      wo.frequency.setValueAtTime(dingFreq * 3, t);
+      wo.frequency.exponentialRampToValueAtTime(dingFreq, t + 0.07);
+      wg.gain.setValueAtTime(0.07, t); wg.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+      wo.connect(wg); wg.connect(audioCtx.destination); wo.start(t); wo.stop(t + 0.07);
+      // Ding: bell-like sine with natural decay
+      const di = audioCtx.createOscillator(), dg = audioCtx.createGain();
+      di.type = 'sine'; di.frequency.value = dingFreq;
+      dg.gain.setValueAtTime(0.18, t + 0.06);
+      dg.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      di.connect(dg); dg.connect(audioCtx.destination);
+      di.start(t + 0.06); di.stop(t + 0.45);
+    }
+
+    // ── Gold ring: higher whoosh + ascending triple chime ───────────────────────
+    function playGoldSound() {
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime;
+      const wo = audioCtx.createOscillator(), wg = audioCtx.createGain();
+      wo.type = 'sine';
+      wo.frequency.setValueAtTime(3520, t);
+      wo.frequency.exponentialRampToValueAtTime(880, t + 0.08);
+      wg.gain.setValueAtTime(0.08, t); wg.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+      wo.connect(wg); wg.connect(audioCtx.destination); wo.start(t); wo.stop(t + 0.08);
+      [[880, 0.08], [1320, 0.18], [1760, 0.28]].forEach(([freq, delay]) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.14, t + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.45);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t + delay); o.stop(t + delay + 0.45);
+      });
+    }
+
+    // ── Miss: descending tone ───────────────────────────────────────────────────
+    function playMissSound() { _tone(300, 'sine', 0.07, 0.3, 150); }
+
+    // ── Near-miss chime ─────────────────────────────────────────────────────────
+    function playNearMissSound() { _tone(660, 'sine', 0.09, 0.18); }
+
+    // ── Crash: low thud + sawtooth crunch overtones ─────────────────────────────
+    function playHitSound() {
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime;
+      // Low thud
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110, t);
+      o.frequency.exponentialRampToValueAtTime(36, t + 0.28);
+      g.gain.setValueAtTime(0.45, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.28);
+      // Crunch overtones
+      [190, 287, 380].forEach(f => {
+        const co = audioCtx.createOscillator(), cg = audioCtx.createGain();
+        co.type = 'sawtooth'; co.frequency.value = f;
+        cg.gain.setValueAtTime(0.07, t); cg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        co.connect(cg); cg.connect(audioCtx.destination); co.start(t); co.stop(t + 0.12);
+      });
+    }
+
+    // ── Game over: descending chord ─────────────────────────────────────────────
+    function playGameOverSound() {
+      if (!audioCtx) return;
+      [440, 370, 311, 261].forEach((freq, i) => {
+        const t = audioCtx.currentTime + i * 0.2;
+        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.18, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.4);
+      });
+    }
+
+    // ── Adaptive music beat ─────────────────────────────────────────────────────
+    // BPM scales linearly from 72 (at startSpeed 0.3×) to 152 (at max 3.0×)
+    function _beatBPM() { return 72 + (speed - 0.3) / 2.7 * 80; }
+
+    function startBeat() {
+      if (!audioCtx || _beatPlaying) return;
+      _beatPlaying = true;
+      _beatCount   = 0;
+      _beatNext    = audioCtx.currentTime + 0.08;
+      _tickBeat();
+    }
+    function stopBeat() {
+      _beatPlaying = false;
+      clearTimeout(_beatTimer);
+    }
+    function _tickBeat() {
+      if (!_beatPlaying || !audioCtx) return;
+      const interval = 60 / _beatBPM(); // seconds per quarter note
+      while (_beatNext < audioCtx.currentTime + 0.15) {
+        const b = _beatCount % 4;
+        _beatKick(_beatNext);                          // kick on every beat
+        if (b === 1 || b === 3) _beatHat(_beatNext);  // hat on off-beats
+        _beatNext  += interval;
+        _beatCount++;
+      }
+      _beatTimer = setTimeout(_tickBeat, 25);
+    }
+    function _beatKick(t) {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(38, t + 0.18);
+      g.gain.setValueAtTime(0.20, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.22);
+    }
+    function _beatHat(t) {
+      const noise = _getNoise();
+      if (!audioCtx || !noise) return;
+      const src = audioCtx.createBufferSource();
+      const hpf = audioCtx.createBiquadFilter();
+      const g   = audioCtx.createGain();
+      src.buffer = noise;
+      hpf.type = 'highpass'; hpf.frequency.value = 7500;
+      g.gain.setValueAtTime(0.055, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      src.connect(hpf); hpf.connect(g); g.connect(audioCtx.destination);
+      src.start(t); src.stop(t + 0.04);
+    }
+
+    // ── Day / night cycle ──────────────────────────────────────────────────────
+    // ph: 0 = full day, 1 = full night (oscillates with distance)
+    function updateDayNight(ph) {
+      const t1 = Math.min(ph * 2, 1);        // 0→1 during first half  (day → sunset)
+      const t2 = Math.max(ph * 2 - 1, 0);    // 0→1 during second half (sunset → night)
+
+      // Sky sides + fog + clear colour
+      _dnTmp.copy(_dnDay.sky).lerp(_dnSunset.sky, t1).lerp(_dnNight.sky, t2);
+      scene.fog.color.copy(_dnTmp);
+      renderer.setClearColor(_dnTmp);
+      skyBox.material[0].color.copy(_dnTmp);
+      skyBox.material[1].color.copy(_dnTmp);
+      skyBox.material[4].color.copy(_dnTmp);
+      skyBox.material[5].color.copy(_dnTmp);
+
+      // Zenith (top face)
+      _dnTmp.copy(_dnDay.zenith).lerp(_dnSunset.zenith, t1).lerp(_dnNight.zenith, t2);
+      skyBox.material[2].color.copy(_dnTmp);
+
+      // Lights
+      ambientLight.intensity = THREE.MathUtils.lerp(0.55, 0.10, ph);
+      sunLight.intensity     = THREE.MathUtils.lerp(1.2,  0.04, ph);
+      hemiLight.intensity    = THREE.MathUtils.lerp(0.40, 0.05, ph);
+      // Hemisphere sky shifts from sky-blue toward dark at night
+      _dnTmp.copy(_dnDay.sky).lerp(_dnNight.sky, ph);
+      hemiLight.color.copy(_dnTmp);
+    }
+
+    // ── Screen shake ───────────────────────────────────────────────────────────
+    function triggerShake(frames, intensity) {
+      shakeFrames    = frames;
+      shakeIntensity = intensity;
+    }
+
+    // ── Combo popup ────────────────────────────────────────────────────────────
+    function showComboPopup(n, lost) {
+      const el = document.getElementById('comboPopup');
+      clearTimeout(el._t);
+      if (lost) {
+        el.textContent = 'COMBO LOST';
+        el.style.color = '#ff8800';
+      } else if (n >= 4) {
+        el.textContent = '×4 MAX COMBO!';
+        el.style.color = '#ffd700';
+      } else {
+        el.textContent = '×' + n + ' COMBO!';
+        el.style.color = '#00ff88';
+      }
+      el.style.opacity = '1';
+      el._t = setTimeout(() => { el.style.opacity = '0'; }, lost ? 900 : 1300);
+    }
+
+    function showNearMissPopup() {
+      const el = document.getElementById('nearMissPopup');
+      el.textContent = '✨ Near Miss!  +1';
+      el.style.opacity = '1';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.opacity = '0'; }, 1100);
+    }
+
+    // ── Achievement system ──────────────────────────────────────────────────────
+    function checkAchievements() {
+      if (gameState !== 'playing') return;
+      const checks = {
+        first_blood:    () => score >= 1,
+        sharpshooter:   () => totalRings >= 10 && ringsScored === totalRings,
+        speed_demon:    () => speed >= 2.0,
+        combo_king:     () => combo >= 4,
+        gold_rush:      () => goldRingsCollected >= 3,
+        near_miss_ace:  () => nearMissCount >= 5,
+        ace_pilot:      () => barrelRollDone,
+        century:        () => score >= 100,
+        zen_master:     () => zenMode && score >= 20,
+      };
+      for (const ach of ACHIEVEMENTS) {
+        if (!earnedBadges.has(ach.id) && checks[ach.id]()) {
+          earnedBadges.add(ach.id);
+          localStorage.setItem('flightBadges', JSON.stringify([...earnedBadges]));
+          sessionBadges.push(ach);
+          queueBadge(ach);
+        }
+      }
+    }
+
+    function queueBadge(ach) {
+      _badgeQueue.push(ach);
+      if (!_badgeShowing) showNextBadge();
+    }
+
+    function showNextBadge() {
+      if (_badgeQueue.length === 0) { _badgeShowing = false; return; }
+      _badgeShowing = true;
+      const ach = _badgeQueue.shift();
+      document.getElementById('badgeIcon').textContent = ach.icon;
+      document.getElementById('badgeName').textContent = ach.label;
+      document.getElementById('badgeDesc').textContent = ach.desc;
+      const el = document.getElementById('badgePopup');
+      el.classList.add('show');
+      playBadgeSound();
+      setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(showNextBadge, 500); // wait for slide-out then show next
+      }, 2800);
+    }
+
+    // ── Milestone system ────────────────────────────────────────────────────────
+    function checkMilestones() {
+      for (const m of MILESTONES) {
+        if (!_triggeredMilestones.has(m) && score >= m) {
+          _triggeredMilestones.add(m);
+          triggerMilestone(m);
+        }
+      }
+    }
+
+    function triggerMilestone(pts) {
+      const def = MILESTONE_MSGS[pts];
+      // Golden screen flash
+      const flash = document.getElementById('screenFlash');
+      flash.style.transition = 'none';
+      flash.style.opacity = '0.45';
+      requestAnimationFrame(() => {
+        flash.style.transition = 'opacity 0.6s ease';
+        requestAnimationFrame(() => { flash.style.opacity = '0'; });
+      });
+      // Milestone message popup
+      const el = document.getElementById('milestonePopup');
+      document.getElementById('milestoneScore').style.color = def.color;
+      document.getElementById('milestoneScore').textContent = pts + ' pts!';
+      document.getElementById('milestoneMsg').textContent   = def.msg;
+      clearTimeout(el._t);
+      el.style.opacity = '1';
+      el._t = setTimeout(() => { el.style.opacity = '0'; }, 2100);
+      // 3D ring burst
+      spawnRingBurst();
+      // Fanfare
+      playMilestoneSound();
+    }
+
+    function spawnRingBurst() {
+      const colors = [0xffd700, 0x00ff88, 0xff3300, 0x0099ff, 0xffffff, 0xff44aa];
+      for (let i = 0; i < 6; i++) {
+        const mat  = new THREE.MeshBasicMaterial({
+          color: colors[i], transparent: true, opacity: 0.85, depthWrite: false,
+        });
+        const mesh = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.1, 6, 24), mat);
+        mesh.position.copy(plane.position);
+        mesh.position.z += 3;
+        mesh.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
+        scene.add(mesh);
+        _burstParticles.push({ mesh, life: 55, maxLife: 55 });
+      }
+    }
+
+    // ── Badge & milestone sounds ────────────────────────────────────────────────
+    function playBadgeSound() {
+      if (!audioCtx) return;
+      [[880, 0, 0.18], [1100, 0.1, 0.25]].forEach(([freq, delay, dur]) => {
+        const t = audioCtx.currentTime + delay;
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.13, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + dur);
+      });
+    }
+
+    function playMilestoneSound() {
+      if (!audioCtx) return;
+      [[523, 0], [659, 0.1], [784, 0.2], [1047, 0.32]].forEach(([freq, delay]) => {
+        const t = audioCtx.currentTime + delay;
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.22, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + 0.5);
+      });
+    }
+
+    // ── Lives ──────────────────────────────────────────────────────────────────
+    function loseLife() {
+      if (invincible || zenMode) return;
+      lives--;
+      refreshHUD();
+      playHitSound();
+      triggerShake(16, 0.65);
+      if (lives <= 0) { endGame(); return; }
+      invincible       = true;
+      invincibleFrames = INVINCIBLE_FRAMES;
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+    function init() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x87CEEB, 0.0035);
+
+      camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 800);
+      camera.position.set(0, 2, -5);
+      camera.lookAt(0, 0, 10);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setClearColor(0x87CEEB);
+      document.body.appendChild(renderer.domElement);
+
+      ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+      scene.add(ambientLight);
+      sunLight = new THREE.DirectionalLight(0xfff4e0, 1.2);
+      sunLight.position.set(80, 300, 60);
+      scene.add(sunLight);
+      hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x4a7c59, 0.4);
+      scene.add(hemiLight);
+
+      createSkyBox();
+      createGround();
+      createPlane();
+      createContrails();
+
+      spawnRings();
+      for (let i = 0; i < 20; i++) { createCloud(); if (i % 5 === 0) createBird(); }
+
+      for (let i = 0; i < 16; i++) createMountain();
+      for (let i = 0; i < 14; i++) createTreeCluster();
+      for (let i = 0; i < 5;  i++) createCityBlock();
+      for (let i = 0; i < 4;  i++) {
+        const s = Math.random() < 0.5 ? 1 : -1;
+        createHotAirBalloon(
+          _nextSponsor(),
+          s * (18 + Math.random() * 22),
+          8  + Math.random() * 10,
+          120 + i * 180 + Math.random() * 100
+        );
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      });
+
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup',   e => { keysDown[e.key] = false; });
+
+      document.getElementById('startButton')     .addEventListener('click', startGame);
+      document.getElementById('zenButton')       .addEventListener('click', startZenGame);
+      document.getElementById('restartButton')   .addEventListener('click', restartGame);
+      document.getElementById('settingsBtnStart').addEventListener('click', () => openSettings('start'));
+      document.getElementById('settingsBtnPause').addEventListener('click', () => openSettings('pause'));
+      document.getElementById('closeSettings')   .addEventListener('click', closeSettings);
+      document.getElementById('exitToMenuBtn')   .addEventListener('click', exitToMenu);
+      document.getElementById('toggleX').addEventListener('click', () => setInvertX(!invertX));
+      document.getElementById('toggleY').addEventListener('click', () => setInvertY(!invertY));
+      document.getElementById('speedDown').addEventListener('click', () => adjustStartSpeed(-0.1));
+      document.getElementById('speedUp')  .addEventListener('click', () => adjustStartSpeed( 0.1));
+
+      setupTouchControls();
+
+      applyToggleUI('trackX', 'labelX', invertX);
+      applyToggleUI('trackY', 'labelY', invertY);
+      updateStartSpeedUI();
+      setupSegControl('ringSizeCtrl',    ringSize,    v => { ringSize    = v; localStorage.setItem('flightRingSize',    v); });
+      setupSegControl('ringSpacingCtrl', ringSpacing, v => { ringSpacing = v; localStorage.setItem('flightRingSpacing', v); });
+      setupSegControl('dayNightCtrl', dayNightMode, v => {
+        dayNightMode = v;
+        localStorage.setItem('flightDayNight', v);
+        // Apply immediately so the sky updates right in the settings preview
+        if (v !== 'auto') updateDayNight(v === 'night' ? 1 : 0);
+      });
+      document.getElementById('highScoreDisplay').textContent = 'Best: ' + highScore;
+
+      animate();
+    }
+
+    // ── Settings ───────────────────────────────────────────────────────────────
+    function openSettings(from) {
+      settingsReturnTo = from;
+      document.getElementById(from === 'start' ? 'startScreen' : 'pauseScreen').style.display = 'none';
+      document.getElementById('settingsScreen').style.display = 'block';
+    }
+    function closeSettings() {
+      document.getElementById('settingsScreen').style.display = 'none';
+      if (settingsReturnTo === 'start') document.getElementById('startScreen').style.display = 'block';
+      if (settingsReturnTo === 'pause') document.getElementById('pauseScreen').style.display = 'block';
+      settingsReturnTo = null;
+    }
+    function setInvertX(v) { invertX = v; localStorage.setItem('flightInvertX', v); applyToggleUI('trackX','labelX',v); }
+    function setInvertY(v) { invertY = v; localStorage.setItem('flightInvertY', v); applyToggleUI('trackY','labelY',v); }
+    function applyToggleUI(tid, lid, on) {
+      document.getElementById(tid).classList.toggle('on', on);
+      document.getElementById(lid).textContent = on ? 'ON' : 'OFF';
+    }
+    function adjustStartSpeed(d) {
+      startSpeed = Math.round((startSpeed + d) * 10) / 10;
+      startSpeed = Math.min(1.5, Math.max(0.3, startSpeed));
+      localStorage.setItem('flightStartSpeed', startSpeed);
+      updateStartSpeedUI();
+    }
+    function updateStartSpeedUI() {
+      document.getElementById('startSpeedVal').textContent = startSpeed.toFixed(1) + '×';
+    }
+    function setupSegControl(ctrlId, currentVal, onChange) {
+      const ctrl = document.getElementById(ctrlId);
+      ctrl.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.val === currentVal);
+        btn.addEventListener('click', () => {
+          ctrl.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          onChange(btn.dataset.val);
+        });
+      });
+    }
+
+    // ── Input ──────────────────────────────────────────────────────────────────
+    function onKeyDown(e) {
+      keysDown[e.key] = true;
+      if (e.key === 'Escape') {
+        if (gameState === 'playing') pauseGame();
+        else if (gameState === 'paused') resumeGame();
+      }
+      // Double-tap ArrowLeft / ArrowRight → barrel roll
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && gameState === 'playing' && barrelRoll === 0) {
+        const now = Date.now();
+        if (lastTapTime[e.key] && now - lastTapTime[e.key] < 300) {
+          barrelRoll        = 42;
+          barrelDir         = e.key === 'ArrowLeft' ? 1 : -1;
+          lastTapTime[e.key] = 0; // reset so triple-tap doesn't chain
+          barrelRollDone    = true;
+          checkAchievements();
+        } else {
+          lastTapTime[e.key] = now;
+        }
+      }
+    }
+    function setupTouchControls() {
+      [['btnUp','ArrowUp'],['btnDown','ArrowDown'],['btnLeft','ArrowLeft'],['btnRight','ArrowRight']]
+        .forEach(([id, key]) => {
+          const btn = document.getElementById(id);
+          const on  = e => { e.preventDefault(); keysDown[key] = true;  };
+          const off = e => { e.preventDefault(); keysDown[key] = false; };
+          btn.addEventListener('touchstart',  on,  { passive: false });
+          btn.addEventListener('touchend',    off, { passive: false });
+          btn.addEventListener('touchcancel', off, { passive: false });
+          btn.addEventListener('mousedown', () => keysDown[key] = true);
+          btn.addEventListener('mouseup',   () => keysDown[key] = false);
+        });
+    }
+
+    // ── Game flow ──────────────────────────────────────────────────────────────
+    function _resetState() {
+      score = 0; ringsScored = 0; speed = startSpeed;
+      distanceTraveled = 0; totalRings = 0;
+      combo = 0; comboMax = 0;
+      ringSpawnCounter = 0;
+      lives = zenMode ? Infinity : MAX_LIVES;
+      invincible = false; invincibleFrames = 0;
+      shakeFrames = 0;
+      barrelRoll = 0;
+      plane.visible = true;
+      // Per-session achievement/milestone state
+      goldRingsCollected = 0; nearMissCount = 0; barrelRollDone = false;
+      sessionBadges = [];
+      _triggeredMilestones.clear();
+      _badgeQueue = []; _badgeShowing = false;
+      document.getElementById('badgePopup').classList.remove('show');
+      document.getElementById('milestonePopup').style.opacity = '0';
+      _burstParticles.forEach(p => { if (scene) scene.remove(p.mesh); });
+      _burstParticles = [];
+      document.getElementById('comboPopup').style.opacity = '0';
+    }
+    function _showGameUI() {
+      document.getElementById('startScreen').style.display   = 'none';
+      document.getElementById('hud').style.display           = 'block';
+      document.getElementById('instructions').style.display  = 'block';
+      document.getElementById('touchControls').style.display = 'block';
+    }
+
+    function startGame()    { zenMode = false; _resetState(); _showGameUI(); gameState = 'playing'; initAudio(); startEngineSound(); startBeat(); refreshHUD(); }
+    function startZenGame() { zenMode = true;  _resetState(); _showGameUI(); gameState = 'playing'; initAudio(); startEngineSound(); startBeat(); refreshHUD(); }
+
+    function pauseGame() {
+      gameState = 'paused';
+      document.getElementById('pauseScreen').style.display = 'block';
+      stopEngineSound(); stopBeat();
+    }
+    function resumeGame() {
+      gameState = 'playing';
+      document.getElementById('pauseScreen').style.display = 'none';
+      startEngineSound(); startBeat();
+    }
+    function exitToMenu() {
+      stopEngineSound(); stopBeat();
+      gameState = 'menu';
+      zenMode   = false;
+      document.getElementById('pauseScreen').style.display   = 'none';
+      document.getElementById('hud').style.display           = 'none';
+      document.getElementById('instructions').style.display  = 'none';
+      document.getElementById('touchControls').style.display = 'none';
+      document.getElementById('startScreen').style.display   = 'block';
+      document.getElementById('comboPopup').style.opacity    = '0';
+      plane.position.set(0, 0, 0);
+      plane.rotation.set(0, 0, 0);
+      plane.visible = true;
+      targetBankZ = 0; targetBankX = 0;
+      camera.position.set(0, 2, -5);
+      obstacles.forEach(o => scene.remove(o));
+      obstacles = [];
+      spawnRings();
+      _resetTrailPts();
+    }
+
+    function endGame() {
+      gameState = 'gameover';
+      stopEngineSound(); stopBeat();
+      playGameOverSound();
+      triggerShake(22, 0.8);
+      plane.visible = true;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('flightSimHighScore', String(highScore));
+        document.getElementById('highScoreDisplay').textContent = 'Best: ' + highScore;
+      }
+      document.getElementById('finalScore')   .textContent = score;
+      document.getElementById('finalRings')   .textContent = ringsScored + ' / ' + totalRings;
+      document.getElementById('finalAccuracy').textContent = getAccuracy();
+      document.getElementById('finalCombo')   .textContent = comboMax + (comboMax >= 4 ? ' 🏆' : comboMax >= 2 ? ' 🔥' : '');
+      document.getElementById('finalDist')    .textContent = formatDist(distanceTraveled);
+      document.getElementById('finalBest')    .textContent = highScore;
+      // Session badges
+      const badgeEl = document.getElementById('goBadgesRow');
+      if (sessionBadges.length > 0) {
+        badgeEl.innerHTML =
+          '<div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.5;margin-bottom:5px;">Badges Earned</div>' +
+          '<div style="font-size:24px;letter-spacing:4px;">' +
+          sessionBadges.map(b => `<span title="${b.label}">${b.icon}</span>`).join('') + '</div>';
+      } else {
+        badgeEl.innerHTML = '';
+      }
+      // Clear any lingering milestone popup
+      document.getElementById('milestonePopup').style.opacity = '0';
+      document.getElementById('gameOver').style.display = 'block';
+    }
+
+    function restartGame() {
+      document.getElementById('gameOver').style.display = 'none';
+      _resetState();
+      plane.position.set(0, 0, 0);
+      plane.rotation.set(0, 0, 0);
+      targetBankZ = 0; targetBankX = 0;
+      camera.position.set(0, 2, -5);
+      obstacles.forEach(o => scene.remove(o));
+      obstacles = [];
+      spawnRings();
+      clouds.forEach(c => c.position.set(Math.random()*100-50, Math.random()*20-5, Math.random()*200-50));
+      birds.forEach(b  => b.position.set(Math.random()*60-30,  Math.random()*20-5, Math.random()*200));
+      hotAirBalloons.forEach(b => {
+        const s = Math.random() < 0.5 ? 1 : -1;
+        b.position.set(s * (18 + Math.random() * 22), 8 + Math.random() * 10, 120 + Math.random() * 700);
+        b.userData.baseY = b.position.y;
+      });
+      _resetTrailPts();
+      gameState = 'playing';
+      initAudio();
+      startEngineSound(); startBeat();
+      refreshHUD();
+    }
+
+    // ── Scene: sky, ground, plane ──────────────────────────────────────────────
+    function createSkyBox() {
+      const geo  = new THREE.BoxGeometry(1000, 1000, 1000);
+      const mats = [
+        new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0x4a8fd4, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0x6aae58, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide }),
+      ];
+      skyBox = new THREE.Mesh(geo, mats);
+      scene.add(skyBox);
+    }
+
+    function createGround() {
+      const geo = new THREE.PlaneGeometry(1000, 1000);
+      const mat = new THREE.MeshLambertMaterial({ color: 0x4a7c59 });
+      ground = new THREE.Mesh(geo, mat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -20;
+      scene.add(ground);
+    }
+
+    function createPlane() {
+      const mat  = new THREE.MeshPhongMaterial({ color: 0x3366ff });
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2, 8), mat);
+      body.rotation.x = -Math.PI / 2;
+      const wings = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.7), mat);
+      const stab  = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.4), mat);
+      stab.position.set(0, 0, -0.85);
+      const fin   = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.5), mat);
+      fin.position.set(0, 0.3, -0.85);
+      plane = new THREE.Group();
+      plane.add(body, wings, stab, fin);
+      scene.add(plane);
+    }
+
+    // ── Contrails ──────────────────────────────────────────────────────────────
+    function _resetTrailPts() {
+      leftTrailPts  = [];
+      rightTrailPts = [];
+      for (let i = 0; i < TRAIL_LEN; i++) {
+        leftTrailPts.push(new THREE.Vector3());
+        rightTrailPts.push(new THREE.Vector3());
+      }
+    }
+
+    function createContrails() {
+      _resetTrailPts();
+      function makeLine() {
+        const geo  = new THREE.BufferGeometry();
+        const pos  = new Float32Array(TRAIL_LEN * 3);
+        const col  = new Float32Array(TRAIL_LEN * 3);
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+        return new THREE.Line(geo, new THREE.LineBasicMaterial({ vertexColors: true }));
+      }
+      leftTrailLine  = makeLine();
+      rightTrailLine = makeLine();
+      scene.add(leftTrailLine);
+      scene.add(rightTrailLine);
+    }
+
+    function updateContrails() {
+      if (!plane) return;
+      plane.updateMatrixWorld(true);
+      const lw = new THREE.Vector3(-1.5, 0, 0).applyMatrix4(plane.matrixWorld);
+      const rw = new THREE.Vector3( 1.5, 0, 0).applyMatrix4(plane.matrixWorld);
+
+      leftTrailPts.unshift(lw);
+      if (leftTrailPts.length  > TRAIL_LEN) leftTrailPts.length  = TRAIL_LEN;
+      rightTrailPts.unshift(rw);
+      if (rightTrailPts.length > TRAIL_LEN) rightTrailPts.length = TRAIL_LEN;
+
+      _writeTrail(leftTrailLine,  leftTrailPts);
+      _writeTrail(rightTrailLine, rightTrailPts);
+    }
+
+    function _writeTrail(line, pts) {
+      const pa = line.geometry.attributes.position.array;
+      const ca = line.geometry.attributes.color.array;
+      const n  = pts.length;
+      for (let i = 0; i < TRAIL_LEN; i++) {
+        const p = i < n ? pts[i] : pts[n - 1];
+        const t = i / (TRAIL_LEN - 1); // 0 = newest (white), 1 = oldest (sky-blue)
+        pa[i*3]   = p.x; pa[i*3+1] = p.y; pa[i*3+2] = p.z;
+        // Lerp white → sky-blue (0x87CEEB = 135, 206, 235 → /255)
+        ca[i*3]   = THREE.MathUtils.lerp(1, 0.53, t);
+        ca[i*3+1] = THREE.MathUtils.lerp(1, 0.81, t);
+        ca[i*3+2] = THREE.MathUtils.lerp(1, 0.92, t);
+      }
+      line.geometry.attributes.position.needsUpdate = true;
+      line.geometry.attributes.color.needsUpdate    = true;
+    }
+
+    // ── Rings ──────────────────────────────────────────────────────────────────
+    function spawnRings() {
+      let z = 45;
+      const sp = RING_SPACING[ringSpacing];
+      for (let i = 0; i < 10; i++) {
+        createRing(z);
+        z += sp.base + Math.random() * sp.var;
+      }
+    }
+
+    function createRing(zPos) {
+      const cfg    = RING_SIZE[ringSize];
+      const radius = cfg.minR + Math.random() * cfg.varR;
+      const tube   = 0.35;
+      const gold   = (ringSpawnCounter % 8 === 7) && speed >= 0.7; // every 8th ring is gold once speed is up
+      const moving = !gold && Math.random() < 0.35; // gold rings don't move
+      ringSpawnCounter++;
+      const bx    = Math.random() * 14 - 7;
+      const by    = Math.random() * 8  - 2;
+      const col   = gold ? 0xFFD700 : (moving ? 0x0099ff : 0xff3300);
+      const emiss = gold ? 0x332200 : (moving ? 0x002244 : 0x220000);
+      const mat   = new THREE.MeshPhongMaterial({ color: col, emissive: emiss, shininess: gold ? 90 : 30 });
+      const ring  = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 12, 36), mat);
+      ring.position.set(bx, by, zPos);
+      ring.userData = {
+        passed: false, radius, tube, moving, gold,
+        baseX: bx, baseY: by,
+        oscAxis:  Math.random() < 0.5 ? 'x' : 'y',
+        oscAmp:   1.5 + Math.random() * 2.5,
+        oscSpeed: 0.4 + Math.random() * 0.8,
+        oscPhase: Math.random() * Math.PI * 2,
+        baseColor: col,
+      };
+      scene.add(ring);
+      obstacles.push(ring);
+    }
+
+    // ── Terrain – mountains ────────────────────────────────────────────────────
+    function createMountain() {
+      const group  = new THREE.Group();
+      const side   = Math.random() < 0.5 ? 1 : -1;
+      const height = 18 + Math.random() * 30;
+      const radius = 10 + Math.random() * 14;
+      const rockMat = new THREE.MeshPhongMaterial({ color: 0x6b6050, flatShading: true });
+      const darkMat = new THREE.MeshPhongMaterial({ color: 0x4a4035, flatShading: true });
+      const snowMat = new THREE.MeshPhongMaterial({ color: 0xeeeeee, flatShading: true });
+      const base = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 7), rockMat);
+      base.position.y = height / 2;
+      base.rotation.y = Math.random() * Math.PI;
+      group.add(base);
+      const dark = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.78, height * 0.55, 7), darkMat);
+      dark.position.y = height * 0.16;
+      dark.rotation.y = Math.random() * Math.PI;
+      group.add(dark);
+      if (height > 28) {
+        const snow = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.26, height * 0.22, 7), snowMat);
+        snow.position.y = height * 0.87;
+        group.add(snow);
+      }
+      group.position.set(side * (26 + Math.random() * 28), -20, Math.random() * 600);
+      group.userData.side = side;
+      scene.add(group);
+      mountains.push(group);
+    }
+
+    // ── Terrain – pine forest clusters ────────────────────────────────────────
+    function createTreeCluster() {
+      const group    = new THREE.Group();
+      const side     = Math.random() < 0.5 ? 1 : -1;
+      const count    = 5 + Math.floor(Math.random() * 5);
+      const trunkMat = new THREE.MeshPhongMaterial({ color: 0x4a2f1a });
+      const hue      = 0.28 + (Math.random() - 0.5) * 0.06;
+      const leavesMat = new THREE.MeshPhongMaterial({
+        color: new THREE.Color().setHSL(hue, 0.65, 0.28), flatShading: true
+      });
+      for (let i = 0; i < count; i++) {
+        const tree = new THREE.Group();
+        const tH   = 3 + Math.random() * 4.5;
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.28, 1.8, 5), trunkMat);
+        trunk.position.y = 0.9;
+        tree.add(trunk);
+        for (let l = 0; l < 3; l++) {
+          const lr   = tH * 0.38 * (1 - l * 0.18);
+          const cone = new THREE.Mesh(new THREE.ConeGeometry(lr, tH * 0.44, 6), leavesMat);
+          cone.position.y = 1.8 + l * tH * 0.28;
+          tree.add(cone);
+        }
+        tree.position.set((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10);
+        tree.scale.setScalar(0.6 + Math.random() * 0.7);
+        group.add(tree);
+      }
+      group.position.set(side * (13 + Math.random() * 9), -20, Math.random() * 500);
+      group.userData.side = side;
+      scene.add(group);
+      treeGroups.push(group);
+    }
+
+    // ── Terrain – city blocks ─────────────────────────────────────────────────
+    const BLDG_COLORS = [
+      0x7a8fa6, 0x6a7a8a, 0x8a9aaa,
+      0xaab0b8, 0xc0bdb5,
+      0x5a7a7a, 0x4a6a70,
+      0xa09080,
+    ];
+    function createCityBlock() {
+      const group = new THREE.Group();
+      const side  = Math.random() < 0.5 ? 1 : -1;
+      const count = 10 + Math.floor(Math.random() * 10);
+      const road  = new THREE.Mesh(
+        new THREE.PlaneGeometry(32, 38),
+        new THREE.MeshLambertMaterial({ color: 0x2d2d2d })
+      );
+      road.rotation.x = -Math.PI / 2;
+      road.position.y = 0.05;
+      group.add(road);
+      const lineGeo = new THREE.PlaneGeometry(0.4, 38);
+      const lineMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+      [-6, 0, 6].forEach(lx => {
+        const ln = new THREE.Mesh(lineGeo, lineMat);
+        ln.rotation.x = -Math.PI / 2;
+        ln.position.set(lx, 0.06, 0);
+        group.add(ln);
+      });
+      for (let i = 0; i < count; i++) {
+        const w   = 2.5 + Math.random() * 4;
+        const d   = 2.5 + Math.random() * 4;
+        const h   = 6   + Math.random() * (i < 4 ? 28 : 12);
+        const col = new THREE.Color(BLDG_COLORS[Math.floor(Math.random() * BLDG_COLORS.length)]);
+        const mat = new THREE.MeshPhongMaterial({ color: col, emissive: col.clone().multiplyScalar(0.12), shininess: 60 });
+        const bldg = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        bldg.position.set((Math.random() - 0.5) * 26, h / 2, (Math.random() - 0.5) * 32);
+        group.add(bldg);
+        if (h > 22 && Math.random() > 0.5) {
+          const ant = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.06, 0.06, 3.5, 4),
+            new THREE.MeshPhongMaterial({ color: 0xcccccc })
+          );
+          ant.position.set(bldg.position.x + (Math.random()-0.5), bldg.position.y + h/2 + 1.75, bldg.position.z + (Math.random()-0.5));
+          group.add(ant);
+        }
+        // Sponsor billboard on tall buildings
+        if (h > 16) {
+          const bsp  = _nextSponsor();
+          const bw   = Math.min(w * 0.85, 4.5);
+          const bh   = bw * 0.5;
+          const sign = new THREE.Mesh(
+            new THREE.PlaneGeometry(bw, bh),
+            new THREE.MeshBasicMaterial({ map: makeSponsorTexture(bsp, 512, 256, 'billboard') })
+          );
+          sign.position.set(bldg.position.x, bldg.position.y + h * 0.15, bldg.position.z - d / 2 - 0.08);
+          sign.rotation.y = Math.PI;
+          group.add(sign);
+        }
+      }
+      group.position.set(side * (30 + Math.random() * 16), -20, 300 + Math.random() * 700);
+      group.userData.side = side;
+      scene.add(group);
+      cityBlocks.push(group);
+    }
+
+    // ── Clouds and birds ───────────────────────────────────────────────────────
+    function createCloud() {
+      const group = new THREE.Group();
+      const mat   = new THREE.MeshPhongMaterial({ color: 0xffffff });
+      for (let i = 0; i < 5; i++) {
+        const r = 1 + Math.random();
+        const m = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), mat);
+        m.position.set(Math.random()*2-1, Math.random()-0.5, Math.random()*2-1);
+        group.add(m);
+      }
+      group.position.set(Math.random()*100-50, Math.random()*20-5, Math.random()*200-50);
+      const s = 1 + Math.random() * 2;
+      group.scale.set(s, s*0.6, s);
+      scene.add(group);
+      clouds.push(group);
+    }
+
+    function createBird() {
+      const group = new THREE.Group();
+      group.add(new THREE.Mesh(new THREE.SphereGeometry(0.3,8,8),
+        new THREE.MeshPhongMaterial({ color: 0x333333 })));
+      const wm = new THREE.MeshPhongMaterial({ color: 0x555555 });
+      const wg = new THREE.BoxGeometry(1, 0.05, 0.3);
+      const lw = new THREE.Mesh(wg, wm); lw.position.x = -0.5;
+      const rw = new THREE.Mesh(wg, wm); rw.position.x =  0.5;
+      group.add(lw, rw);
+      group.position.set(Math.random()*60-30, Math.random()*20-5, Math.random()*200);
+      group.userData = {
+        wingDir: 1, wingSpeed: 0.05 + Math.random()*0.05,
+        moveX: (Math.random()-0.5)*0.2, moveY: (Math.random()-0.5)*0.05,
+      };
+      scene.add(group);
+      birds.push(group);
+    }
+
+    // ── Sponsor canvas texture ─────────────────────────────────────────────────
+    function _sponsorBgColor(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+      return ['#0d1b2a', '#1b0d2a', '#0d2a1b', '#2a1a0d'][Math.abs(h) % 4];
+    }
+    function _sponsorStripes(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+      const P = [
+        ['#e63946','#f4a261','#2a9d8f','#e9c46a','#264653','#f4a261','#e63946','#e9c46a'],
+        ['#8338ec','#3a86ff','#fb5607','#ff006e','#ffbe0b','#8338ec','#3a86ff','#ff006e'],
+        ['#06d6a0','#118ab2','#073b4c','#ffd166','#ef476f','#06d6a0','#118ab2','#ffd166'],
+      ];
+      return P[Math.abs(h) % P.length];
+    }
+
+    function makeSponsorTexture(sponsor, w, texH, style) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = texH;
+      const ctx = canvas.getContext('2d');
+      if (style === 'balloon') {
+        const stripes = _sponsorStripes(sponsor.name);
+        const sw = canvas.width / stripes.length;
+        stripes.forEach((c, si) => { ctx.fillStyle = c; ctx.fillRect(si * sw, 0, sw, canvas.height); });
+        ctx.fillStyle = 'rgba(0,0,0,0.40)';
+        ctx.fillRect(0, canvas.height * 0.29, canvas.width, canvas.height * 0.44);
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(canvas.width * 0.115)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText(sponsor.name,    canvas.width / 2, canvas.height * 0.57);
+        ctx.font = `${Math.round(canvas.width * 0.065)}px Arial`;
+        ctx.fillStyle = '#ffd700'; ctx.shadowBlur = 5;
+        ctx.fillText(sponsor.tagline, canvas.width / 2, canvas.height * 0.65);
+      } else {
+        ctx.fillStyle = _sponsorBgColor(sponsor.name);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(3, 3, canvas.width - 6, 7);
+        ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 5;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(canvas.width * 0.162)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText(sponsor.name,    canvas.width / 2, canvas.height * 0.52);
+        ctx.font = `${Math.round(canvas.width * 0.082)}px Arial`;
+        ctx.fillStyle = '#88ccff'; ctx.shadowBlur = 4;
+        ctx.fillText(sponsor.tagline, canvas.width / 2, canvas.height * 0.78);
+      }
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    // ── Hot air balloon ────────────────────────────────────────────────────────
+    function createHotAirBalloon(sponsor, x, y, z) {
+      const group    = new THREE.Group();
+      const envTex   = makeSponsorTexture(sponsor, 512, 512, 'balloon');
+      const envelope = new THREE.Mesh(
+        new THREE.SphereGeometry(3.5, 24, 24),
+        new THREE.MeshPhongMaterial({ map: envTex, shininess: 20 })
+      );
+      envelope.scale.y = 1.35;
+      group.add(envelope);
+
+      // Neck cylinder at bottom of envelope
+      const neckMat = new THREE.MeshPhongMaterial({ color: 0x777777 });
+      const neck    = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 1.2, 8), neckMat);
+      neck.position.y = -(3.5 * 1.35 + 0.6);
+      group.add(neck);
+
+      // Burner glow (point light inside envelope opening)
+      const glow = new THREE.PointLight(0xff6600, 1.4, 10);
+      glow.position.y = -3.8;
+      group.add(glow);
+
+      // Ropes connecting envelope base to basket
+      const ropeMat = new THREE.MeshPhongMaterial({ color: 0x8B6914 });
+      const ropeLen = 3.0;
+      [[-0.7,-0.7],[-0.7,0.7],[0.7,-0.7],[0.7,0.7]].forEach(([rx, rz]) => {
+        const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, ropeLen, 4), ropeMat);
+        rope.position.set(rx * 0.4, -(3.5 * 1.35 + 1.2 + ropeLen / 2), rz * 0.4);
+        rope.rotation.z = rx * 0.2;
+        rope.rotation.x = rz * 0.2;
+        group.add(rope);
+      });
+
+      // Basket
+      const basketMat = new THREE.MeshPhongMaterial({ color: 0x8B5E3C, shininess: 5 });
+      const basket    = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 1.6), basketMat);
+      basket.position.y = -(3.5 * 1.35 + 1.2 + ropeLen + 0.5);
+      group.add(basket);
+
+      group.position.set(x, y, z);
+      group.userData = {
+        bobPhase:     Math.random() * Math.PI * 2,
+        bobSpeed:     0.38 + Math.random() * 0.28,
+        baseY:        y,
+        envelopeMesh: envelope,
+      };
+      scene.add(group);
+      hotAirBalloons.push(group);
+    }
+
+    function _refreshBalloonSponsor(balloon) {
+      const old = balloon.userData.envelopeMesh.material.map;
+      const tex = makeSponsorTexture(_nextSponsor(), 512, 512, 'balloon');
+      balloon.userData.envelopeMesh.material.map = tex;
+      balloon.userData.envelopeMesh.material.needsUpdate = true;
+      if (old) old.dispose();
+    }
+
+    // ── Collision detection ────────────────────────────────────────────────────
+    function checkCollisions() {
+      if (zenMode || invincible) return;
+      for (const ring of obstacles) {
+        const dz = ring.position.z - plane.position.z;
+        if (dz < 0 || dz > Math.max(speed * 2 + 2, 6)) continue;
+        const dx   = plane.position.x - ring.position.x;
+        const dy   = plane.position.y - ring.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const inner = ring.userData.radius - ring.userData.tube - 0.55;
+        const outer = ring.userData.radius + ring.userData.tube + 0.55;
+        if (dist > inner && dist < outer) { loseLife(); return; }
+      }
+    }
+
+    // ── HUD ────────────────────────────────────────────────────────────────────
+    function refreshHUD() {
+      document.getElementById('scoreDisplay')   .textContent = 'Score: ' + score;
+      document.getElementById('accuracyDisplay').textContent = 'Accuracy: ' + getAccuracy();
+      document.getElementById('distDisplay')    .textContent = 'Dist: ' + formatDist(distanceTraveled);
+      document.getElementById('flightDisplay')  .textContent =
+        'Alt: ' + Math.round(plane.position.y * 10 + 500) + ' m | ' + speed.toFixed(1) + '×';
+      document.getElementById('liveDisplay').innerHTML = getLivesHtml();
+      document.getElementById('highScoreDisplay').textContent = 'Best: ' + highScore;
+    }
+
+    // ── Animation loop ─────────────────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (gameState === 'playing') {
+        const ms   = 0.13;
+        const dirX = invertX ? -1 :  1;
+        const dirY = invertY ? -1 :  1;
+
+        // Movement
+        let movingH = false, movingV = false;
+        if (keysDown['ArrowRight']) { plane.position.x += ms*dirX; targetBankZ = -0.35*dirX; movingH = true; }
+        if (keysDown['ArrowLeft'])  { plane.position.x -= ms*dirX; targetBankZ =  0.35*dirX; movingH = true; }
+        if (!movingH) targetBankZ = 0;
+        if (keysDown['ArrowUp'])    { plane.position.y += ms*dirY; targetBankX =  0.18*dirY; movingV = true; }
+        if (keysDown['ArrowDown'])  { plane.position.y -= ms*dirY; targetBankX = -0.18*dirY; movingV = true; }
+        if (!movingV) targetBankX = 0;
+
+        plane.position.x = Math.max(-9, Math.min(9,  plane.position.x));
+        plane.position.y = Math.max(-8, Math.min(10, plane.position.y));
+
+        // Barrel roll takes over rotation.z for its duration
+        if (barrelRoll > 0) {
+          plane.rotation.z += (Math.PI * 2 / 42) * barrelDir;
+          barrelRoll--;
+          if (barrelRoll === 0) plane.rotation.z = targetBankZ; // snap to bank on exit
+        } else {
+          plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, targetBankZ, 0.12);
+        }
+        plane.rotation.x = THREE.MathUtils.lerp(plane.rotation.x, targetBankX, 0.12);
+
+        plane.position.z += speed;
+        distanceTraveled += speed;
+
+        // Day/night cycle
+        const _dnPhase = dayNightMode === 'day'   ? 0
+                       : dayNightMode === 'night'  ? 1
+                       : (1 - Math.cos(distanceTraveled * Math.PI / 1500)) / 2;
+        updateDayNight(_dnPhase);
+
+        // Invincibility blink
+        if (invincible) {
+          invincibleFrames--;
+          plane.visible = Math.floor(invincibleFrames / 7) % 2 === 0;
+          if (invincibleFrames <= 0) { invincible = false; plane.visible = true; }
+        }
+
+        // Camera follows plane
+        camera.position.z += speed;
+        camera.position.y  = THREE.MathUtils.lerp(camera.position.y, plane.position.y + 2,    0.08);
+        camera.position.x  = THREE.MathUtils.lerp(camera.position.x, plane.position.x * 0.25, 0.08);
+
+        // Screen shake
+        if (shakeFrames > 0) {
+          const mag = shakeIntensity * (shakeFrames / 16);
+          camera.position.x += (Math.random() - 0.5) * mag;
+          camera.position.y += (Math.random() - 0.5) * mag;
+          shakeFrames--;
+        }
+
+        camera.lookAt(plane.position.x, plane.position.y, plane.position.z + 10);
+
+        ground.position.z = camera.position.z;
+        skyBox.position.copy(camera.position);
+
+        // Contrails
+        updateContrails();
+
+        // Engine sound pitch
+        updateEngineSound();
+
+        // Clouds
+        clouds.forEach(c => {
+          c.position.z -= speed * 0.3;
+          if (c.position.z < camera.position.z - 30) {
+            c.position.z = camera.position.z + 180;
+            c.position.x = Math.random()*100-50;
+            c.position.y = Math.random()*20-5;
+          }
+        });
+
+        // Birds
+        birds.forEach(b => {
+          b.position.z -= speed * 0.5;
+          b.position.x += b.userData.moveX;
+          b.position.y += b.userData.moveY;
+          const lw = b.children[1], rw = b.children[2];
+          if (lw && rw) {
+            lw.rotation.z += b.userData.wingSpeed * b.userData.wingDir;
+            rw.rotation.z -= b.userData.wingSpeed * b.userData.wingDir;
+            if (Math.abs(lw.rotation.z) > 0.5) b.userData.wingDir *= -1;
+          }
+          if (b.position.z < camera.position.z - 30) {
+            b.position.z = camera.position.z + 180;
+            b.position.x = Math.random()*60-30;
+            b.position.y = Math.random()*20-5;
+          }
+        });
+
+        // Collision check runs first so invincible is set before near-miss is evaluated
+        checkCollisions();
+
+        // Rings: oscillate, score, recycle
+        const now = performance.now() / 1000;
+        obstacles.forEach(ring => {
+          ring.rotation.z += 0.005;
+
+          // Moving rings oscillate
+          if (ring.userData.moving) {
+            const ud  = ring.userData;
+            const off = Math.sin(now * ud.oscSpeed + ud.oscPhase) * ud.oscAmp;
+            if (ud.oscAxis === 'x') ring.position.x = ud.baseX + off;
+            else                    ring.position.y = ud.baseY + off;
+          }
+
+          // Scoring when plane crosses ring
+          if (!ring.userData.passed && ring.position.z < plane.position.z) {
+            ring.userData.passed = true;
+            totalRings++;
+
+            const dx     = plane.position.x - ring.position.x;
+            const dy     = plane.position.y - ring.position.y;
+            const dist2D = Math.sqrt(dx * dx + dy * dy);
+            const holeR  = ring.userData.radius - ring.userData.tube;
+
+            if (dist2D < holeR) {
+              // Flew through the hole
+              ringsScored++;
+              combo++;
+              comboMax = Math.max(comboMax, combo);
+
+              const nearMiss = dist2D > holeR * 0.8; // within 20% of the inner edge
+
+              if (ring.userData.gold) {
+                // Gold ring: flat 3 pts + slow speed escalation
+                score += 3;
+                speed  = Math.max(startSpeed, speed - 0.05);
+                ring.material.color.set(0xffffff);
+                setTimeout(() => { ring.material.color.set(ring.userData.baseColor); }, 450);
+                goldRingsCollected++;
+                playGoldSound();
+              } else {
+                const pts = Math.min(combo, 4);
+                score += pts;
+                ring.material.color.set(0x00ff88);
+                setTimeout(() => { ring.material.color.set(ring.userData.baseColor); }, 350);
+                if (ringsScored % 5 === 0) speed = Math.min(speed + 0.08, 3.0);
+                playRingSound(combo);
+                if (combo >= 2) showComboPopup(combo, false);
+              }
+
+              if (nearMiss && !invincible) {
+                score += 1;
+                nearMissCount++;
+                showNearMissPopup();
+                playNearMissSound();
+                triggerShake(4, 0.3);
+              }
+            } else {
+              // Went around
+              if (combo >= 2) showComboPopup(0, true);
+              combo = 0;
+              ring.material.color.set(0xff8800);
+              setTimeout(() => { ring.material.color.set(ring.userData.baseColor); }, 350);
+              playMissSound();
+            }
+            refreshHUD();
+            checkAchievements();
+            checkMilestones();
+          }
+
+          // Recycle ring
+          if (ring.position.z < camera.position.z - 30) {
+            const sp    = RING_SPACING[ringSpacing];
+            const fZ    = obstacles.reduce((m, o) => Math.max(m, o.position.z), camera.position.z);
+            const bx    = Math.random() * 14 - 7;
+            const by    = Math.random() * 8  - 2;
+            const gold   = (ringSpawnCounter % 8 === 7) && speed >= 0.7;
+            const moving = !gold && Math.random() < 0.35;
+            ringSpawnCounter++;
+            const col   = gold ? 0xFFD700 : (moving ? 0x0099ff : 0xff3300);
+            const emiss = gold ? 0x332200 : (moving ? 0x002244 : 0x220000);
+            ring.material.color.set(col);
+            ring.material.emissive.set(emiss);
+            ring.material.shininess = gold ? 90 : 30;
+            ring.position.z = fZ + sp.base + Math.random() * sp.var;
+            ring.position.x = bx;
+            ring.position.y = by;
+            ring.userData.gold      = gold;
+            ring.userData.moving    = moving;
+            ring.userData.baseColor = col;
+            ring.userData.baseX     = bx;
+            ring.userData.baseY     = by;
+            ring.userData.oscPhase  = Math.random() * Math.PI * 2;
+            ring.userData.passed    = false;
+          }
+        });
+
+        // Terrain recycling
+        const behind = camera.position.z - 60;
+        const ahead  = camera.position.z + 380;
+
+        mountains.forEach(m => {
+          if (m.position.z < behind) {
+            const s = Math.random() < 0.5 ? 1 : -1;
+            m.position.x = s * (26 + Math.random() * 28);
+            m.position.z = ahead + Math.random() * 200;
+          }
+        });
+        treeGroups.forEach(t => {
+          if (t.position.z < behind) {
+            const s = Math.random() < 0.5 ? 1 : -1;
+            t.position.x = s * (13 + Math.random() * 9);
+            t.position.z = ahead + Math.random() * 150;
+          }
+        });
+        cityBlocks.forEach(c => {
+          if (c.position.z < behind) {
+            const s = Math.random() < 0.5 ? 1 : -1;
+            c.position.x = s * (30 + Math.random() * 16);
+            c.position.z = ahead + Math.random() * 300;
+          }
+        });
+
+        // Hot air balloons: gentle bob + sponsor recycling
+        hotAirBalloons.forEach(b => {
+          b.position.y = b.userData.baseY + Math.sin(now * b.userData.bobSpeed + b.userData.bobPhase) * 0.7;
+          if (b.position.z < behind) {
+            const s = Math.random() < 0.5 ? 1 : -1;
+            b.position.x = s * (18 + Math.random() * 22);
+            b.position.z = ahead + Math.random() * 250;
+            b.userData.baseY = 8 + Math.random() * 10;
+            _refreshBalloonSponsor(b);
+          }
+        });
+
+        // Live altitude in HUD
+        document.getElementById('flightDisplay').textContent =
+          'Alt: ' + Math.round(plane.position.y * 10 + 500) + ' m | ' + speed.toFixed(1) + '×';
+      }
+
+      // Burst particle update (runs regardless of game state until all expire)
+      for (let i = _burstParticles.length - 1; i >= 0; i--) {
+        const bp = _burstParticles[i];
+        const t  = 1 - bp.life / bp.maxLife;
+        bp.mesh.scale.setScalar(1 + t * 4.5);
+        bp.mesh.material.opacity = (1 - t) * 0.85;
+        bp.life--;
+        if (bp.life <= 0) { scene.remove(bp.mesh); _burstParticles.splice(i, 1); }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Load sponsors from sponsor.json before initialising the scene so textures
+    // are rendered with the correct content on first creation.
+    fetch('sponsor.json')
+      .then(r => r.json())
+      .then(js => { if (Array.isArray(js) && js.length) sponsors = js; })
+      .catch(() => {})
+      .finally(() => init());
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main menu</title>
+    <link rel="stylesheet" type="text/css" href="style1.css">
+</head>
+<body>
+
+    <div class="meni">
+        <a href="igra.html" class="link"><button class="dugme1"></button></a>
+        <button class="dugme2" onclick="document.getElementById('popup').style.display='block'"></button>
+        <button class="dugme3" id="musicButton" onclick="toggleMusic()"></button>
+    </div>
+
+    <!-- <div id="popup" class="popup"> -->
+            <div id="popup" class="popup-content">
+                <span class="close" onclick="document.getElementById('popup').style.display='none'">&times;</span>
+                <!-- <p class="tekstpravila">Povuci karticu i po principu domina postavi <br> na odgovarajuce mesto u polju ispod!</p> -->
+            </div>
+      <!--   </div> -->
+
+
+    <audio id="backgroundMusic" autoplay loop>
+        <source src="music.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <script>
+        // Učitaj stanje muzike iz localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            var audio = document.getElementById('backgroundMusic');
+            var button = document.getElementById('musicButton');
+
+            // Provjeri je li muzika već uključena
+            if (localStorage.getItem('musicPlaying') === 'true') {
+                audio.play();
+            }
+
+            button.addEventListener('click', () => {
+                if (audio.paused) {
+                    audio.play();
+                    localStorage.setItem('musicPlaying', 'true');
+                } else {
+                    audio.pause();
+                    localStorage.setItem('musicPlaying', 'false');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

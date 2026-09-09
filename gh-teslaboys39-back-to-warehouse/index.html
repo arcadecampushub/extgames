@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back to Warehouse</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        #splashScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff3333;
+            font-size: 48px;
+            font-family: 'Creepster', cursive;
+            transition: opacity 1s ease-out;
+        }
+        #splashScreen.fade-out {
+            opacity: 0;
+        }
+        #mainMenu, #gameOverMenu, #pauseMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="splashScreen">Back to Warehouse</div>
+    <div id="mainMenu" style="display: none;">
+        <h1>Back to Warehouse</h1>
+        <select id="difficultySelect">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hardcore">Hardcore</option>
+        </select>
+        <button id="startButton">Start Game</button>
+    </div>
+    <div id="gameOverMenu" style="display: none;">
+        <h1>Game Over!</h1>
+        <p>Score: <span id="finalScore"></span></p>
+        <p>High Score: <span id="highScore"></span></p>
+        <button id="restartButton">Restart</button>
+        <button id="mainMenuButton">Return to Main Menu</button>
+    </div>
+    <div id="pauseMenu" style="display: none;">
+        <h1>Paused</h1>
+        <button id="resumeButton">Resume</button><br><br>
+        <button id="pauseToMainMenuButton">Main Menu</button>
+    </div>
+    <script src="enemies.js"></script>
+    <script src="background.js"></script>
+    <script src="weapons.js"></script>
+    <script src="player.js"></script>
+    <script src="particles.js"></script>
+    <script src="ui.js"></script>
+    <script src="state.js"></script>
+    <script src="config.js"></script>
+    <script src="events.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

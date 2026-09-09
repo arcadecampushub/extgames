@@ -1,0 +1,27 @@
+import { CONSTANTS } from "../constants/constants.js";
+import { LevelScene } from "./level.js";
+import { Barbarian } from "../targets/enemies/barbarian.js";
+
+export class BarbarianVillageScene extends LevelScene {
+    constructor() {
+        super({
+            levelType: CONSTANTS.LEVEL_TYPE.ENEMY,
+            key: CONSTANTS.SCENES.BARBARIAN_VILLAGE,
+            background: {
+                name: "barbarian-village",
+                path: "assets/backgrounds/BarbarianVillageBackground.png",
+            },
+            minimap: {
+                name: "barbarian-village-map",
+                path: "assets/maps/BarbarianVillageMap.png",
+            },
+            targets: [Barbarian],
+            questAmounts: {
+                barbarian: [20, 200, 2000],
+            },
+            questPointAward: 2,
+            audio: { bgm: "barbarianism" },
+            shouldAutoclick: true,
+        });
+    }
+}

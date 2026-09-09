@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>a2.games - Free Browser games</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="./images/logo.png">
+    <script src="https://unpkg.com/lenis@1.3.11/dist/lenis.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.11/dist/lenis.css">
+    <link rel="stylesheet" href="./css/main.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <a href="#" class="logo-container">
+                <img src="./images/logo.png" class="logo-img" alt="A2 games logo">
+                <div class="logo-text">a2.games</div>
+            </a>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-link active">Home</a>
+                <a href="#games" class="nav-link">Games</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+
+            <div class="nav-cta">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon theme-icon-dark">🌙</span>
+                    <span class="theme-icon theme-icon-light">☀️</span>
+                </button>
+                <a href="https://github.com/raghuchinnannan/a2.games" target="_blank" class="nav-btn">
+                    <span>⭐</span> Star on GitHub
+                </a>
+            </div>
+
+            <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+            </div>
+        </div>
+
+        <!-- Mobile nav overlay -->
+        <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+
+        <div class="mobile-nav" id="mobileNav">
+            <nav class="mobile-nav-menu">
+                <a href="#" class="mobile-nav-link active">Home</a>
+                <a href="#games" class="mobile-nav-link">Games</a>
+                <a href="#about" class="mobile-nav-link">About</a>
+                <a href="#contact" class="mobile-nav-link">Contact</a>
+            </nav>
+            <div class="mobile-nav-cta">
+                <button class="theme-toggle mobile-theme-toggle" id="mobileThemeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon theme-icon-dark">🌙</span>
+                    <span class="theme-icon theme-icon-light">☀️</span>
+                    <span class="theme-label">Switch Theme</span>
+                </button>
+                <a href="https://github.com/raghuchinnannan/a2.games" target="_blank" class="nav-btn">
+                    <span>⭐</span> Star on GitHub
+                </a>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    🎮 Free Browser Games
+                </div>
+                <h1>Play Amazing Games<br>Right From Your Browser</h1>
+                <p class="hero-subtitle">
+                    Discover a collection of fun, engaging games that you can play instantly.
+                    No downloads, no installations—just pure entertainment at your fingertips.
+                </p>
+                <div class="hero-cta">
+                    <div class="cta-buttons">
+                        <a href="#games" class="btn-primary">
+                            🎯 Start Playing
+                        </a>
+                        <a href="https://github.com/raghuchinnannan/a2.games" target="_blank" class="btn-secondary">
+                            💻 Contribute on GitHub
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">30+</span>
+                        <span class="stat-label">Games Available</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Free to Play</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">ZERO</span>
+                        <span class="stat-label">Downloads Required</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">∞</span>
+                        <span class="stat-label">Hours of Fun</span>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator">
+                <span></span>
+            </div>
+        </div>
+
+        <!-- Game Filter Bar -->
+        <div class="game-filter-section" id="games">
+            <div class="filter-header">
+                <h2>Browse Games</h2>
+                <p>Filter games by category to find your favorite type of game</p>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-tags">
+                    <button class="filter-tag active" data-filter="all">🎮 All Games</button>
+                    <button class="filter-tag" data-filter="puzzle">🧩 Puzzle</button>
+                    <button class="filter-tag" data-filter="arcade">🕹️ Arcade</button>
+                    <button class="filter-tag" data-filter="action">⚡ Action</button>
+                    <button class="filter-tag" data-filter="strategy">🧠 Strategy</button>
+                    <button class="filter-tag" data-filter="casual">🎯 Casual</button>
+                    <button class="filter-tag" data-filter="classic">👾 Classic</button>
+                    <button class="filter-tag" data-filter="desktop">💻 Desktop</button>
+                    <button class="filter-tag" data-filter="mobile">📱 Mobile</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="games" id="gamesContainer">
+            <!-- Games will be dynamically loaded here -->
+            <div style="text-align: center; padding: 4rem 2rem; color: var(--text-secondary);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎮</div>
+                <p>Loading games...</p>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <section id="about" class="section">
+            <div class="section-header">
+                <h2 class="section-title">About a2.games</h2>
+                <p class="section-subtitle">
+                    Your ultimate destination for free, browser-based gaming experiences.
+                    No downloads, no hassle, just pure entertainment.
+                    By <a href='https://raghu.ch/' target="_blank">Raghu Chinnannan</a>
+                </p>
+            </div>
+            <div class="about-content">
+                <div class="about-card">
+                    <span class="about-icon">🎮</span>
+                    <h3>Free Gaming</h3>
+                    <p>All our games are completely free to play - just pure gaming fun for everyone.</p>
+                </div>
+                <div class="about-card">
+                    <span class="about-icon">🌐</span>
+                    <h3>Browser Based</h3>
+                    <p>Play instantly in your web browser. No downloads, installations, or software required. Works on
+                        desktop, tablet, and mobile devices.</p>
+                </div>
+                <div class="about-card">
+                    <span class="about-icon">🚀</span>
+                    <h3>Always Growing</h3>
+                    <p>Our game collection is constantly expanding. New games are added regularly, ensuring fresh
+                        content and endless entertainment.</p>
+                </div>
+                <div class="about-card">
+                    <span class="about-icon">👥</span>
+                    <h3>Community Driven</h3>
+                    <p>Built by gamers, for gamers. Our open-source platform welcomes contributions from developers
+                        worldwide to create amazing gaming experiences.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section">
+            <div class="section-header">
+                <h2 class="section-title">Get in Touch</h2>
+                <p class="section-subtitle">
+                    Have questions, suggestions, or want to contribute? We'd love to hear from you!
+                </p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-card">
+                    <div class="contact-icon">💻</div>
+                    <h3>Contribute on GitHub</h3>
+                    <p>Join our open-source community. Add your own games, fix bugs, or improve the platform.</p>
+                    <a href="https://github.com/raghuchinnannan/a2.games" target="_blank" class="contact-btn">
+                        <span>⭐</span> View on GitHub
+                    </a>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">🐛</div>
+                    <h3>Report Issues</h3>
+                    <p>Found a bug or have a feature request? Let us know through our GitHub issues page.</p>
+                    <a href="https://github.com/raghuchinnannan/a2.games/issues" target="_blank" class="contact-btn">
+                        <span>🔧</span> Report Issue
+                    </a>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">💡</div>
+                    <h3>Suggest Games</h3>
+                    <p>Have an idea for a new game? Share your suggestions and help us expand our collection.</p>
+                    <a href="https://github.com/raghuchinnannan/a2.games/issues" target="_blank" class="contact-btn">
+                        <span>💭</span> Share Ideas
+                    </a>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">📧</div>
+                    <h3>Direct Contact</h3>
+                    <p>For business inquiries, partnerships, or other questions, reach out directly.</p>
+                    <a href="mailto:info@a2.games" class="contact-btn">
+                        <span>✉️</span> Send Email
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Professional Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-main">
+                <!-- About Section -->
+                <div class="footer-section">
+                    <h3>a2.games</h3>
+                    <p>Your ultimate destination for free browser-based games. No downloads, no installations, just pure
+                        gaming entertainment accessible anywhere, anytime.</p>
+                    <div class="footer-social">
+                        <a href="https://github.com/raghuchinnannan/a2.games" target="_blank" class="social-link"
+                            title="GitHub">
+                            <span>💻</span>
+                        </a>
+                        <a href="https://github.com/raghuchinnannan/a2.games/issues" target="_blank" class="social-link"
+                            title="Issues">
+                            <span>🐛</span>
+                        </a>
+                        <a href="mailto:info@a2.games" class="social-link" title="Email">
+                            <span>📧</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Games Section -->
+                <div class="footer-section">
+                    <h3>Popular Games</h3>
+                    <ul class="footer-links">
+                        <li><a href="./games/memory-match.html">🧠 Memory Match</a></li>
+                        <li><a href="./games/brick-breaker.html">🧱 Brick Breaker</a></li>
+                        <li><a href="./games/snake.html">🐍 Snake Classic</a></li>
+                        <li><a href="./games/2048.html">🔢 2048 Puzzle</a></li>
+                        <li><a href="./games/flappy.html">🐦 Flappy Boy</a></li>
+                        <li><a href="./games/sudoku.html">🧩 Sudoku</a></li>
+                    </ul>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#games">🎮 Browse Games</a></li>
+                        <li><a href="#about">ℹ️ About Us</a></li>
+                        <li><a href="#contact">📞 Contact</a></li>
+                        <li><a href="https://github.com/raghuchinnannan/a2.games" target="_blank">⭐ Star on GitHub</a>
+                        </li>
+                        <li><a href="https://github.com/raghuchinnannan/a2.games/issues" target="_blank">🔧 Report
+                                Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    &copy; 2025 a2.games. All rights reserved. Built with ❤️ for gamers worldwide.
+                </div>
+                <ul class="footer-bottom-links">
+                    <!-- <li><a href="#privacy">Privacy Policy</a></li>
+                    <li><a href="#terms">Terms of Service</a></li>
+                    <li><a href="#cookies">Cookie Policy</a></li> -->
+                    <li><a href="https://github.com/raghuchinnannan/a2.games/blob/main/LICENSE"
+                            target="_blank">License</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://nitrozen.io/js/widget.js" data-project="a2games" defer></script>
+    <script src="./js/main.js"></script>
+    <script src="./js/filter.js"></script>
+    <script src="./js/games-renderer.js"></script>
+</body>
+
+</html>

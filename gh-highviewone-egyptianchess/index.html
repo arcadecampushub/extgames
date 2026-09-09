@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharaoh's Chess — Egyptian Chess Variant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Egyptian+Hieroglyphs&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- Hieroglyph frieze -->
+  <div class="frieze">
+    <div class="line"></div>
+    <div class="glyphs">𓂀 𓋹 𓆗 𓊽 𓃬 𓀎 𓁢 𓇋</div>
+    <div class="line"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="crest">𓂀 𓋹 𓆙 𓃬 𓀎</div>
+    <h1>PHARAOH<span class="accent">'</span>S CHESS</h1>
+    <p class="sub">The Ancient Game of Strategy</p>
+  </header>
+
+  <!-- Main layout -->
+  <div class="game-layout">
+
+    <!-- Left panel: Black -->
+    <aside class="panel" id="black-panel">
+      <div class="panel-inner">
+        <div class="panel-name">
+          <span class="glyph">𓁢</span>
+          <div class="realm">Upper Egypt</div>
+          <div class="side">☽ Black</div>
+        </div>
+        <div class="panel-section-label">Lost Pieces</div>
+        <div class="captured" id="black-captured"></div>
+        <button class="ankh-btn" id="black-ankh" disabled>Ankh Resurrection</button>
+        <div class="ankh-counter" id="black-ankh-label">1 resurrection remaining</div>
+      </div>
+    </aside>
+
+    <!-- Center: Board -->
+    <div class="board-stage">
+
+      <div class="board-frame">
+        <div class="frame-glyphs top">𓂀 𓋹 𓆗 𓊽 𓃬 𓀎 𓁢 𓇋</div>
+
+        <div class="board-with-labels">
+          <div class="corner"></div>
+          <div class="file-labels">
+            <span>a</span><span>b</span><span>c</span><span>d</span>
+            <span>e</span><span>f</span><span>g</span><span>h</span>
+          </div>
+          <div class="corner"></div>
+
+          <div class="rank-labels">
+            <span>8</span><span>7</span><span>6</span><span>5</span>
+            <span>4</span><span>3</span><span>2</span><span>1</span>
+          </div>
+          <div id="board" class="board"></div>
+          <div class="rank-labels">
+            <span>8</span><span>7</span><span>6</span><span>5</span>
+            <span>4</span><span>3</span><span>2</span><span>1</span>
+          </div>
+
+          <div class="corner"></div>
+          <div class="file-labels">
+            <span>a</span><span>b</span><span>c</span><span>d</span>
+            <span>e</span><span>f</span><span>g</span><span>h</span>
+          </div>
+          <div class="corner"></div>
+        </div>
+
+        <div class="frame-glyphs bottom">𓋹 𓂀 𓇋 𓀎 𓃬 𓊽 𓆗 𓁢</div>
+
+        <!-- FX layers (positioned inside frame) -->
+        <div class="fx-layer" id="fx-layer"></div>
+        <div class="ankh-burst hidden" id="ankh-burst"></div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span id="status-text">White to move</span>
+      </div>
+
+      <!-- Controls: new-game + move log -->
+      <div class="controls-row">
+        <button class="btn" id="new-game-btn">⟳ New Game</button>
+        <div class="log-box">
+          <h4>Sacred Scroll</h4>
+          <div id="move-log"></div>
+        </div>
+      </div>
+    </div><!-- /board-stage -->
+
+    <!-- Right panel: White -->
+    <aside class="panel" id="white-panel">
+      <div class="panel-inner">
+        <div class="panel-name">
+          <span class="glyph">𓀭</span>
+          <div class="realm">Lower Egypt</div>
+          <div class="side">☀ White</div>
+        </div>
+        <div class="panel-section-label">Lost Pieces</div>
+        <div class="captured" id="white-captured"></div>
+        <button class="ankh-btn" id="white-ankh" disabled>Ankh Resurrection</button>
+        <div class="ankh-counter" id="white-ankh-label">1 resurrection remaining</div>
+      </div>
+    </aside>
+
+  </div><!-- /game-layout -->
+
+  <!-- Rules (collapsible) -->
+  <details class="rules-box">
+    <summary>Rules of Egypt</summary>
+    <div class="rules-content">
+      <div><b>Pharaoh</b> (King) — One square any direction.</div>
+      <div><b>Vizier</b> (Queen) — Any distance, any direction.</div>
+      <div><b>Chariot</b> (Rook) — Any distance, ranks &amp; files.</div>
+      <div><b>Priest</b> (Bishop, Anubis) — Any distance, diagonals.</div>
+      <div><b><span class="glyph">𓃬</span> Sphinx</b> (Extended Knight) — Standard knight L-jump <em>and</em> slides 1–2 squares diagonally without jumping over pieces.</div>
+      <div><b>Soldier</b> (Pawn) — Forward 1; 2 from start; captures diagonally. En passant applies. Promotes at far rank.</div>
+      <div><b>☥ Ankh Resurrection</b> — Once per game per side: spend your turn to place your most recently lost piece on any empty square in your back two ranks. Cannot leave you in check.</div>
+      <div><b>Pyramid Zone</b> (d4–e5) — Sacred ground. Positional atmosphere — no mechanical effect.</div>
+      <div>No castling. Check, checkmate, and stalemate follow classical rules.</div>
+    </div>
+  </details>
+
+</div><!-- /app -->
+
+<!-- Promotion dialog -->
+<div class="dialog-overlay hidden" id="promo-dialog">
+  <div class="dialog-box">
+    <div class="crest-large">𓋹</div>
+    <h3>Choose Promotion</h3>
+    <div class="promo-btns" id="promo-pieces"></div>
+  </div>
+</div>
+
+<!-- Game-over dialog -->
+<div class="dialog-overlay hidden" id="over-dialog">
+  <div class="dialog-box">
+    <div class="crest-large" id="over-crest">𓂀</div>
+    <h3 id="over-title">Checkmate</h3>
+    <p class="over-message" id="over-msg"></p>
+    <div class="over-actions">
+      <button class="btn" id="over-new-btn">⟳ New Game</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/pieces-svg.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

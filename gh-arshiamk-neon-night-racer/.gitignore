@@ -1,0 +1,5 @@
+# Secrets — never commit API keys
+.env
+
+# Local tooling
+node_modules/

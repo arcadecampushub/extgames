@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Cosmodial Sky Atlas</title>
+  <meta name="description" content="A free, offline-first stargazing web app — the live sky from where you stand, from naked-eye views down to a telescope eyepiece." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Cosmodial Sky Atlas" />
+  <meta property="og:description" content="A free, offline-first stargazing web app — the live sky from where you stand, from naked-eye views down to a telescope eyepiece." />
+  <meta property="og:url" content="https://cosmodial.3d2k.com/" />
+  <meta property="og:image" content="https://cosmodial.3d2k.com/images/cosmodial-social.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Cosmodial Sky Atlas — the name in serif capitals over a crescent moon and star field" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./images/favicon.png" />
+  <link rel="apple-touch-icon" href="./images/apple-touch-icon.png" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <!-- Static boot splash: visible from first paint until main.js finishes loading the catalogues
+       (it fades this out after the first render), so startup is never a bare black screen. -->
+  <div id="boot-splash" aria-hidden="true">
+    <div class="boot-title">Cosmodial</div>
+    <div class="boot-sub">Sky Atlas</div>
+    <div class="boot-loading">loading the sky…</div>
+  </div>
+  <canvas id="sky-gl"></canvas>
+  <canvas id="sky"></canvas>
+  <div id="controls"></div>
+  <div id="card-host"></div>
+  <div id="favorites-host"></div>
+  <div id="screensaver-label" aria-hidden="true"></div>
+  <div id="screensaver-brand" aria-hidden="true">Cosmodial</div>
+  <div id="night-overlay"></div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

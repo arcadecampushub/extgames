@@ -1,0 +1,68 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { colorWord, easeTag, distanceLy, constellationName, eclipseContacts, visWord, lightYears, cometSeeLine } from '../js/ui/card.js';
+
+test('colorWord buckets B-V into plain colors', () => {
+  assert.equal(colorWord(-0.1), 'blue-white');
+  assert.equal(colorWord(0.2), 'white');
+  assert.equal(colorWord(0.65), 'yellow');
+  assert.equal(colorWord(1.2), 'orange');
+  assert.equal(colorWord(1.8), 'red');
+  assert.equal(colorWord(null), 'white');
+});
+
+test('easeTag from magnitude', () => {
+  assert.equal(easeTag(1), 'naked eye');
+  assert.equal(easeTag(7), 'binoculars');
+  assert.equal(easeTag(12), 'telescope');
+});
+
+test('distanceLy converts parsecs (null-safe)', () => {
+  assert.ok(Math.abs(distanceLy(10) - 32.6156) < 1e-3);
+  assert.equal(distanceLy(null), null);
+  assert.equal(distanceLy(100000), 326156);
+});
+
+test('constellationName resolves abbreviations', () => {
+  assert.equal(constellationName('Ori'), 'Orion');
+  assert.equal(constellationName('ZZZ'), 'ZZZ');
+});
+
+test('visWord phrases visibility', () => {
+  assert.equal(visWord('full'), 'visible from here');
+  assert.equal(visWord('partial'), 'partly visible from here');
+});
+
+test('eclipseContacts lists only the phases that occur, in order', () => {
+  const peak = new Date('2026-07-01T05:00:00Z');
+  const mk = (sdPartial, sdTotal) => ({
+    contacts: {
+      partialBegin: sdPartial ? new Date(peak.getTime() - sdPartial * 60000) : null,
+      totalBegin: sdTotal ? new Date(peak.getTime() - sdTotal * 60000) : null,
+      peak,
+      totalEnd: sdTotal ? new Date(peak.getTime() + sdTotal * 60000) : null,
+      partialEnd: sdPartial ? new Date(peak.getTime() + sdPartial * 60000) : null,
+    },
+  });
+  const total = eclipseContacts(mk(90, 30)).map(([label]) => label);
+  assert.deepEqual(total, ['partial begins', 'totality begins', 'peak', 'totality ends', 'partial ends']);
+  const partial = eclipseContacts(mk(60, 0)).map(([label]) => label);
+  assert.deepEqual(partial, ['partial begins', 'peak', 'partial ends']);
+  const annular = eclipseContacts(mk(90, 30), 'annularity').map(([label]) => label);
+  assert.deepEqual(annular, ['partial begins', 'annularity begins', 'peak', 'annularity ends', 'partial ends']);
+});
+
+test('lightYears formats with thousand/million units', () => {
+  assert.equal(lightYears(444), '444 light-years');
+  assert.equal(lightYears(25000), '25 thousand light-years');
+  assert.equal(lightYears(2500000), '2.5 million light-years');
+  assert.equal(lightYears(null), null);
+});
+
+test('cometSeeLine: ease tag with magnitude, honest about invisibly faint comets', () => {
+  assert.equal(cometSeeLine(3.2), 'naked eye (magnitude 3.2)');
+  assert.equal(cometSeeLine(8), 'binoculars (magnitude 8.0)');
+  assert.equal(cometSeeLine(12.4), 'telescope (magnitude 12.4)');
+  assert.equal(cometSeeLine(25.1), 'not visible right now — too faint even for large telescopes');
+  assert.equal(cometSeeLine(null), null);
+});

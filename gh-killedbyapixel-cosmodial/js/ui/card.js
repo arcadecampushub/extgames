@@ -1,0 +1,290 @@
+import { NAMES } from '../core/constellation-names.js';
+import { bodyDistanceAu, moonPhaseInfo } from '../core/astro.js';
+import { azToCompass } from '../render/hud.js';
+import { shareUrlFor } from './share.js';
+import { showToast } from './toast.js';
+
+const PC_TO_LY = 3.26156;
+
+// B-V color index -> a plain-language color.
+export function colorWord(bv) {
+  if (bv == null || !Number.isFinite(bv)) return 'white';
+  if (bv < 0.0) return 'blue-white';
+  if (bv < 0.3) return 'white';
+  if (bv < 0.6) return 'yellow-white';
+  if (bv < 1.0) return 'yellow';
+  if (bv < 1.5) return 'orange';
+  return 'red';
+}
+
+// Naked-eye / binoculars / telescope from apparent magnitude.
+export function easeTag(mag) {
+  if (!Number.isFinite(mag)) return 'telescope';
+  if (mag <= 5.5) return 'naked eye';
+  if (mag <= 9) return 'binoculars';
+  return 'telescope';
+}
+
+// Visibility phrase for a comet. easeTag's "telescope" is honest to ~mag 14; beyond that no
+// amateur instrument will show it, so say so instead.
+export function cometSeeLine(mag) {
+  if (mag == null || !Number.isFinite(mag)) return null;
+  if (mag > 14) return 'not visible right now — too faint even for large telescopes';
+  return `${easeTag(mag)} (magnitude ${mag.toFixed(1)})`;
+}
+
+// Parsecs -> light-years (null-safe).
+export function distanceLy(distPc) {
+  if (distPc == null || !Number.isFinite(distPc) || distPc <= 0) return null;
+  return distPc * PC_TO_LY;
+}
+
+// IAU abbreviation -> full constellation name (falls through to the input if unknown).
+export function constellationName(abbr) {
+  return NAMES[abbr] || abbr || '';
+}
+
+// Format a light-year distance with friendly units (null-safe).
+export function lightYears(ly) {
+  if (ly == null || !Number.isFinite(ly) || ly <= 0) return null;
+  if (ly >= 1e6) return `${+(ly / 1e6).toFixed(1)} million light-years`;
+  if (ly >= 1e4) return `${Math.round(ly / 1e3)} thousand light-years`;
+  return `${Math.round(ly)} light-years`;
+}
+
+// Plain-language visibility phrase for an eclipse.
+export function visWord(visibility) {
+  return visibility === 'partial' ? 'partly visible from here' : 'visible from here';
+}
+
+// Ordered [label, Date] contact pairs that actually occur for this eclipse (peak always present).
+// `totalWord` names the central phase: 'totality' (default), or 'annularity' for an annular solar.
+export function eclipseContacts(e, totalWord = 'totality') {
+  const c = e.contacts;
+  const out = [];
+  if (c.partialBegin) out.push(['partial begins', c.partialBegin]);
+  if (c.totalBegin) out.push([`${totalWord} begins`, c.totalBegin]);
+  out.push(['peak', c.peak]);
+  if (c.totalEnd) out.push([`${totalWord} ends`, c.totalEnd]);
+  if (c.partialEnd) out.push(['partial ends', c.partialEnd]);
+  return out;
+}
+
+const AU_TO_KM = 1.495978707e8;
+
+let onCloseCb = null;
+let current = null; // { obj, ctx } of the open card, for the delegated star toggle
+
+function row(html) { const p = document.createElement('p'); p.className = 'card-line'; p.innerHTML = html; return p; }
+
+// Where the object is right now.
+function whereLine(altaz) {
+  return row(`<b>Where now:</b> ${azToCompass(altaz.az)} (az ${Math.round(altaz.az)}°), ${Math.round(altaz.alt)}° above the horizon`);
+}
+
+// Type-specific body lines (array of <p>).
+function bodyLines(obj, ctx) {
+  const lines = [];
+  if (obj.kind === 'star') {
+    const cn = constellationName(obj.con);
+    lines.push(row(`A ${colorWord(obj.bv)} star${cn ? ` in ${cn}` : ''}.`));
+    const ly = distanceLy(obj.dist);
+    if (ly != null) {
+      lines.push(row(`<b>Distance:</b> ${ly < 100 ? ly.toFixed(1) : Math.round(ly).toLocaleString()} light-years`));
+    }
+    lines.push(row(`<b>How to see it:</b> ${easeTag(obj.mag)} (magnitude ${obj.mag})`));
+  } else if (obj.kind === 'moon') {
+    const m = moonPhaseInfo(ctx.time);
+    const km = Math.round(bodyDistanceAu(obj.body, ctx.observer, ctx.time) * AU_TO_KM);
+    lines.push(row(`The Moon — <b>${m.phaseName}</b>, ${m.illumPct}% lit.`));
+    lines.push(row(`<b>Distance:</b> ${km.toLocaleString()} km away`));
+    lines.push(row(`<b>How to see it:</b> naked eye`));
+    if (ctx.eclipse) {
+      const e = ctx.eclipse;
+      if (e.live) {
+        const kindWord = e.kind === 'total' ? 'Total' : 'Partial';
+        const note = e.visibility === 'partial' ? ' (partly visible from here)' : '';
+        const fmt = (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        lines.push(row(`🌘 <b>${kindWord} lunar eclipse${note}.</b>`));
+        lines.push(row(`<b>Times:</b> ${eclipseContacts(e).map(([label, d]) => `${label} ${fmt(d)}`).join(' · ')}`));
+        if (e.totalityMinutes) lines.push(row(`<b>Totality:</b> ${Math.round(e.totalityMinutes)} min`));
+        lines.push(row(`✨ Sunlight bent through Earth's atmosphere paints it coppery-red — dimmer than the photos, but unmistakable to the eye.`));
+      } else {
+        const when = e.peak.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        lines.push(row(`<b>Next lunar eclipse:</b> ${when} (${e.kind}), ${visWord(e.visibility)}.`));
+      }
+    }
+  } else if (obj.kind === 'sun') {
+    lines.push(row(`The Sun.`));
+    if (ctx.eclipse) {
+      const e = ctx.eclipse;
+      const kindWord = e.kind === 'total' ? 'Total' : e.kind === 'annular' ? 'Annular' : 'Partial';
+      const pct = Math.round(e.obscuration * 100);
+      if (e.live) {
+        const phaseWord = e.kind === 'annular' ? 'annularity' : 'totality';
+        const note = e.visibility === 'partial' ? ' (partly visible from here)' : '';
+        const fmt = (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        lines.push(row(`🌞 <b>${kindWord} solar eclipse${note}.</b> The Moon covers ${pct}% of the Sun at peak.`));
+        lines.push(row(`<b>Times:</b> ${eclipseContacts(e, phaseWord).map(([label, d]) => `${label} ${fmt(d)}`).join(' · ')}`));
+        if (e.totalityMinutes) {
+          const phaseName = e.kind === 'annular' ? 'Annularity' : 'Totality';
+          lines.push(row(`<b>${phaseName}:</b> ${Math.round(e.totalityMinutes)} min`));
+        }
+      } else {
+        const when = e.peak.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        lines.push(row(`<b>Next solar eclipse from here:</b> ${when} (${e.kind}, ${pct}% covered), ${visWord(e.visibility)}.`));
+      }
+    }
+    lines.push(row(`⚠️ <b>Never look at the Sun</b> through binoculars or a telescope without a proper solar filter.`));
+  } else if (obj.kind === 'dso') {
+    const cn = constellationName(obj.con);
+    lines.push(row(`${obj.name} — a ${obj.type}${cn ? ` in ${cn}` : ''}.`));
+    const dly = lightYears(obj.distLy);
+    if (dly) {
+      lines.push(row(`<b>Distance:</b> ${dly}`));
+    }
+    if (obj.seen) lines.push(row(`<b>What you'll see:</b> ${obj.seen}`));
+    lines.push(row(`<b>How to see it:</b> ${easeTag(obj.mag)} (magnitude ${obj.mag})`));
+  } else if (obj.kind === 'comet') {
+    lines.push(row(obj.blurb || `${obj.name} — a comet.`));
+    if (obj.altaz) {
+      lines.push(row(`<b>Distance:</b> ${obj.deltaAu.toFixed(2)} AU from Earth · ${obj.rAu.toFixed(2)} AU from the Sun`));
+      lines.push(row(`<b>How to see it:</b> ${cometSeeLine(obj.mag)}`));
+    } else {
+      lines.push(row(`<b>No position for this date</b> — orbit data covers ${obj.coverage}.`));
+    }
+  } else if (obj.kind === 'satellite') {
+    lines.push(row(obj.blurb || `${obj.name} — a satellite.`));
+    if (obj.altaz) {
+      lines.push(row(`<b>Distance:</b> ${Math.round(obj.rangeKm).toLocaleString()} km away`));
+      lines.push(row(`<b>How to see it:</b> naked eye (magnitude ${obj.mag.toFixed(1)}) — a steady light, visibly moving`));
+      if (obj.sunlit === false) lines.push(row(`Currently inside Earth's shadow — unlit, invisible from the ground.`));
+      if (obj.nextPass) {
+        const p = obj.nextPass;
+        const t = p.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        lines.push(row(`<b>Next good pass:</b> ${t} — ${azToCompass(p.startAz)} to ${azToCompass(p.endAz)}, peaking ${Math.round(p.peakAlt)}° up`));
+      }
+    } else {
+      lines.push(row(`<b>No position for this date</b> — its published orbit only covers about ten days around today.`));
+    }
+  } else if (obj.kind === 'constellation') {
+    lines.push(row(`${obj.name} — a constellation.`));
+    if (obj.brightest) {
+      lines.push(row(`<b>Brightest star:</b> ${obj.brightest.name} (magnitude ${obj.brightest.mag.toFixed(1)})`));
+    }
+  } else if (obj.kind === 'planet-moon') {
+    const au = bodyDistanceAu(obj.planetBody, ctx.observer, ctx.time);
+    lines.push(row(`${obj.label} — a moon of ${obj.planet}.`));
+    lines.push(row(`<b>Distance:</b> ${au.toFixed(2)} AU`));
+    lines.push(row(`<b>How to see it:</b> ${easeTag(obj.mag)} (magnitude ${obj.mag.toFixed(1)})`));
+    if (obj.behind) lines.push(row(`Currently hidden behind ${obj.planet}.`));
+  } else { // planet
+    const au = bodyDistanceAu(obj.body, ctx.observer, ctx.time);
+    lines.push(row(`${obj.label} — a ${obj.label === 'Pluto' ? 'dwarf planet' : 'planet'}.`));
+    lines.push(row(`<b>Distance:</b> ${au.toFixed(2)} AU`));
+    const magStr = Number.isFinite(obj.mag) ? ` (magnitude ${obj.mag.toFixed(1)})` : '';
+    lines.push(row(`<b>How to see it:</b> ${easeTag(obj.mag)}${magStr}`));
+  }
+  return lines;
+}
+
+function titleOf(obj) {
+  if (obj.kind === 'star') return obj.name || 'Unnamed star';
+  if (obj.kind === 'moon') return 'Moon';
+  if (obj.kind === 'sun') return 'Sun';
+  if (obj.kind === 'dso') return obj.name;
+  if (obj.kind === 'comet') return obj.name;
+  if (obj.kind === 'constellation') return obj.name;
+  if (obj.kind === 'satellite') return obj.title || obj.name;
+  return obj.label;
+}
+
+// Render the card into #card-host (replacing any open card). Re-called on every sky recompute to
+// refresh the live readouts — PER FRAME in live mode — so two rules keep it clickable and calm:
+// the close handler is DELEGATED to the persistent host (a listener on the rebuilt button would be
+// destroyed between pointer-down and click), and the swap is SKIPPED when the content is unchanged
+// (readouts are rounded, so they only tick occasionally).
+export function openCard(obj, ctx) {
+  const host = document.getElementById('card-host');
+  if (!host) return;
+  onCloseCb = (ctx && ctx.onClose) || null;
+  current = { obj, ctx };
+  if (!host.dataset.closeWired) {
+    host.dataset.closeWired = '1';
+    host.addEventListener('click', (e) => {
+      if (e.target.closest('.card-close')) { closeCard(); return; }
+      // Star toggle: flip the favorite, then re-render so the button reflects the new state.
+      if (e.target.closest('.card-fav') && current && current.ctx.fav) {
+        current.ctx.fav.toggle(current.obj);
+        openCard(current.obj, current.ctx);
+        return;
+      }
+      // Eye: zoom way in (size-aware). focusObject re-renders the card itself.
+      if (e.target.closest('.card-eye') && current && current.ctx.inspect) {
+        current.ctx.inspect(current.obj);
+        return;
+      }
+      // Share: copy a link that reopens the app focused on this object (?obj=kind:id).
+      if (e.target.closest('.card-share') && current) {
+        const url = shareUrlFor(current.obj);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(() => showToast('Link copied'),
+            () => window.prompt('Copy this link:', url)); // clipboard blocked: hand it over manually
+        } else {
+          window.prompt('Copy this link:', url);
+        }
+      }
+    });
+  }
+  const card = document.createElement('div');
+  card.className = 'card';
+  const close = document.createElement('button');
+  close.className = 'card-close';
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '×';
+  let star = null;
+  if (ctx && ctx.fav) {
+    const isFav = ctx.fav.has(obj);
+    star = document.createElement('button');
+    star.className = 'card-fav' + (isFav ? ' on' : '');
+    star.type = 'button';
+    star.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+    star.textContent = isFav ? '★' : '☆';
+  }
+  let eye = null;
+  if (ctx && ctx.inspect && obj.altaz) { // no zoom-to for a position-less pick (comet outside coverage)
+    eye = document.createElement('button');
+    eye.className = 'card-eye';
+    eye.type = 'button';
+    eye.setAttribute('aria-label', 'Zoom in close');
+    eye.textContent = '👁';
+  }
+  const share = document.createElement('button');
+  share.className = 'card-share';
+  share.type = 'button';
+  share.setAttribute('aria-label', 'Copy a link to this object');
+  share.title = 'Copy link';
+  share.textContent = '🔗';
+  const h = document.createElement('h2');
+  h.className = 'card-title';
+  h.textContent = titleOf(obj);
+  card.append(close, ...(star ? [star] : []), ...(eye ? [eye] : []), share, h, ...bodyLines(obj, ctx),
+    ...(obj.altaz ? [whereLine(obj.altaz)] : []));
+  if (host.firstChild && host.firstChild.innerHTML === card.innerHTML) return; // unchanged: keep the live DOM
+  host.innerHTML = '';
+  host.append(card);
+}
+
+export function closeCard() {
+  const host = document.getElementById('card-host');
+  if (host) host.innerHTML = '';
+  const cb = onCloseCb; onCloseCb = null; current = null;
+  if (cb) cb();
+}
+
+// Is an object card currently showing? Used to decide whether to refresh it as the live sky advances.
+export function isCardOpen() {
+  const host = document.getElementById('card-host');
+  return !!host && host.childElementCount > 0;
+}

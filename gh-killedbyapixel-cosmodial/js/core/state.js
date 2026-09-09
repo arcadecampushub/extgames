@@ -1,0 +1,142 @@
+import { wrap360, clamp } from './angles.js';
+
+export const MIN_FOV = 0.005; // deepest zoom (~0.3 arcmin) — lets the true-scale (1:1) planets resolve large
+export const MAX_FOV = 200;   // widest zoom-out, matching Stellarium's stereographic limit — looking straight up/down shows the full horizon circle
+export const DEFAULT_FOV = 60; // startup FOV (comfortable naked-eye view); zoom-out can widen to MAX_FOV
+export const MAX_ALT = 90;   // the camera may aim all the way to the zenith/nadir — the level frame stays heading-true at the pole (see cameraBasis)
+const STORE_KEY = 'cosmodial.location';
+const STORE_KEY_VIEW = 'cosmodial.view'; // last aim, so a reload resumes where you were looking (zoom intentionally not kept)
+const STORE_KEY_FLAGS = 'cosmodial.flags'; // remembered view toggles (see PERSISTED_FLAGS)
+
+// View toggles that persist across reloads. Deliberately excludes `edit` (a transient mode, never
+// restored). A previously-saved `sphere` key is silently ignored (the full-sphere toggle was
+// replaced by the aim-driven below-horizon fade).
+const PERSISTED_FLAGS = ['lines', 'labels', 'grid', 'eqgrid', 'deepsky', 'horizon', 'night', 'atmo'];
+
+// Default location (used until the user sets one): Houston, TX — Space City.
+const DEFAULT_LOCATION = { lat: 29.76, lng: -95.37, label: 'Houston, TX' };
+const DEFAULT_AIM = { az: 180, alt: 45 };
+
+// Lowest altitude the camera may aim at: near the nadir. Aiming below the horizon is always
+// allowed — the below-horizon sky fades in over time once the aim dips (see stepBelowFade in
+// atmosphere.js; the per-frame stepping lives in main.js render()).
+const minAltFor = () => -MAX_ALT;
+
+function loadSavedLocation() {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// Restore the last AIM direction, validated, or null if absent/corrupt. The zoom is deliberately
+// NOT restored: reloading into a deep telescopic view (a fraction of a degree of featureless sky)
+// is disorienting — instead a reload keeps where you were aimed and reopens fully zoomed out.
+function loadSavedView() {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORE_KEY_VIEW);
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    if (!v || !v.aim || !Number.isFinite(v.aim.az) || !Number.isFinite(v.aim.alt)) return null;
+    return { aim: { az: wrap360(v.aim.az), alt: clamp(v.aim.alt, -MAX_ALT, MAX_ALT) } };
+  } catch { return null; }
+}
+
+// Restore the remembered view toggles (only the PERSISTED_FLAGS keys, only booleans), or {} if none.
+function loadSavedFlags() {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const v = JSON.parse(localStorage.getItem(STORE_KEY_FLAGS) || 'null');
+    if (!v || typeof v !== 'object') return {};
+    const out = {};
+    for (const k of PERSISTED_FLAGS) if (typeof v[k] === 'boolean') out[k] = v[k];
+    return out;
+  } catch { return {}; }
+}
+
+export function createState() {
+  const savedView = loadSavedView();
+  const flags = { lines: false, labels: true, grid: false, eqgrid: false, deepsky: false, horizon: true, night: false, atmo: true, edit: false, gyro: false, ...loadSavedFlags() };
+  const aim = savedView ? savedView.aim : { ...DEFAULT_AIM };
+  let state = {
+    location: loadSavedLocation() || { ...DEFAULT_LOCATION },
+    time: { instant: null, live: true }, // instant set by setTime; null means "use Date.now() at read"
+    aim: { az: aim.az, alt: clamp(aim.alt, minAltFor(flags), MAX_ALT) }, // honor the horizon lock on restore
+    fov: savedView ? MAX_FOV : DEFAULT_FOV, // returning users reopen wide (saved aim, never saved zoom)
+    roll: 0, // camera roll about the viewing axis; nonzero only while gyro/AR aim is active
+    flags,
+  };
+
+  // Persisting on every aim/fov change would write to localStorage on every drag frame; throttle so we
+  // write at most a few times a second. The trailing timer reads `state` at fire time, so it always
+  // captures the final resting view.
+  let viewSaveTimer = null;
+  const saveView = () => {
+    if (typeof localStorage === 'undefined' || viewSaveTimer) return;
+    viewSaveTimer = setTimeout(() => {
+      viewSaveTimer = null;
+      try { localStorage.setItem(STORE_KEY_VIEW, JSON.stringify({ aim: state.aim })); } catch { /* ignore */ }
+    }, 250);
+  };
+  const saveFlags = () => {
+    if (typeof localStorage === 'undefined') return;
+    const subset = {};
+    for (const k of PERSISTED_FLAGS) subset[k] = state.flags[k];
+    try { localStorage.setItem(STORE_KEY_FLAGS, JSON.stringify(subset)); } catch { /* ignore */ }
+  };
+  const listeners = new Set();
+  const emit = () => { for (const fn of listeners) fn(state); };
+
+  return {
+    // Returns the current state snapshot. Treat it as READ-ONLY — do not mutate the
+    // returned object or its nested members; use the setters, which replace state immutably.
+    getState: () => state,
+    subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+    setAim(az, alt) {
+      state = { ...state, aim: { az: wrap360(az), alt: clamp(alt, minAltFor(state.flags), MAX_ALT) } };
+      saveView();
+      emit();
+    },
+    setFov(fov) {
+      state = { ...state, fov: clamp(fov, MIN_FOV, MAX_FOV) };
+      saveView();
+      emit();
+    },
+    // Gyro/AR aim: set azimuth, altitude, and roll in one update. Honors the gyro horizon unlock
+    // (minAltFor) and does NOT persist — the live orientation isn't a resting view to restore.
+    setOrientation(az, alt, roll) {
+      if (!state.flags.gyro) return; // AR aim only; ignore stray calls when gyro mode is off
+      if (!Number.isFinite(az) || !Number.isFinite(alt)) return; // ignore a non-finite sensor reading
+      state = {
+        ...state,
+        aim: { az: wrap360(az), alt: clamp(alt, minAltFor(state.flags), MAX_ALT) },
+        roll: Number.isFinite(roll) ? roll : 0,
+      };
+      emit();
+    },
+    setLocation(lat, lng, label) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return; // ignore invalid coordinates
+      state = { ...state, location: { lat, lng, label } };
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(state.location)); } catch { /* ignore */ }
+      }
+      emit();
+    },
+    // Pass live=true (e.g. setTime(null, true)) to return to live "now" mode.
+    setTime(instant, live = false) {
+      state = { ...state, time: { instant, live } };
+      emit();
+    },
+    setFlag(name, value) {
+      if (!(name in state.flags)) throw new Error(`Unknown flag: ${name}`);
+      const flags = { ...state.flags, [name]: value };
+      // Exiting gyro/AR levels the view (roll back to 0); other flag changes leave roll untouched.
+      const roll = (name === 'gyro' && value === false) ? 0 : state.roll;
+      state = { ...state, flags, roll };
+      if (PERSISTED_FLAGS.includes(name)) saveFlags();
+      emit();
+    },
+  };
+}

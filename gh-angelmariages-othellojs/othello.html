@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<title>Othello</title>
+	<style type="text/css">
+		#canvasGame {
+			width: 500px;
+			height: 500px;
+		}
+		@media screen and (max-height: 490px) {
+			#canvasGame {
+				width: 90vh;
+				height: 90vh;
+			}
+		}
+		@media screen and (max-width: 490px) {
+			#canvasGame {
+				width: 90vw;
+				height: 90vw;
+			}
+		}
+	</style>
+	<script type="text/javascript" src="othello.js"></script>
+</head>
+<body>
+	<center>
+	<canvas id="canvasGame" width="1000" height="1000" style="//border: 2px solid black;"></canvas>
+	<br>
+	<div class="label label-default" id="msg"></div>
+	<br>
+	<br>
+	<button type="button" class="btn btn-danger" id="reset">Reset</button>
+	<button type="button" class="btn btn-primary" id="mode">Singleplayer</button>
+	</center>
+</body></html>

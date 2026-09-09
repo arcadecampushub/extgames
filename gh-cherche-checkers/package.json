@@ -1,0 +1,29 @@
+{
+  "name": "checkers",
+  "version": "1.0.0",
+  "description": "An HTML5 implementation of checkers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cherche/checkers.git"
+  },
+  "author": "Ryan Nguyen",
+  "license": "MIT",
+  "private": "true",
+  "bugs": {
+    "url": "https://github.com/cherche/checkers/issues"
+  },
+  "homepage": "https://github.com/cherche/checkers#readme",
+  "devDependencies": {
+    "babel-preset-env": "^1.7.0",
+    "gulp": "^4.0.0",
+    "gulp-babel": "^8.0.0",
+    "gulp-babel-minify": "^0.5.0",
+    "gulp-clean-css": "^4.0.0",
+    "gulp-concat": "^2.6.1",
+    "webpack-stream": "^5.2.1"
+  }
+}

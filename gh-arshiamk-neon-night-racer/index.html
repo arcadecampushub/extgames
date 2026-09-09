@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Night Racer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="gameCanvas"></canvas>
+      <div id="ui-layer">
+        <div id="hud">
+          <div class="stat">SPEED <span id="speed-display">0</span></div>
+          <div class="stat">SCORE <span id="score-display">0</span></div>
+          <div class="stat" id="time-stat">TIME <span id="time-display">60</span></div>
+          <div class="stat" id="combo-stat">COMBO ×<span id="combo-display">1</span></div>
+        </div>
+        <div id="toast" class="hidden"></div>
+        <div id="start-screen" class="overlay">
+          <h1>NEON NIGHT RACER</h1>
+          <p>Use Arrow Keys or WASD to Drive · M to Mute</p>
+          <p>Weave through traffic — near misses build your combo</p>
+          <p class="blink">Press ENTER to Start</p>
+        </div>
+        <div id="game-over" class="overlay hidden">
+          <h1>RUN OVER</h1>
+          <p>SCORE: <span id="final-score">0</span></p>
+          <p>BEST: <span id="best-score">0</span></p>
+          <p class="blink">Press ENTER to Retry</p>
+        </div>
+        <div id="touch-controls">
+          <div class="tcluster">
+            <div class="tbtn" data-action="left">◀</div>
+            <div class="tbtn" data-action="right">▶</div>
+          </div>
+          <div class="tcluster">
+            <div class="tbtn" data-action="brake">BRAKE</div>
+            <div class="tbtn" data-action="throttle">GAS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

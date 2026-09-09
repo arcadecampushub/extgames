@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Primary Meta -->
+  <title>Typing Tutor Game – Improve Your Typing Speed</title>
+  <meta name="description"
+        content="Typing Tutor is a web-based game to boost typing speed and accuracy. Features 5 difficulty levels, live score tracking, and responsive design."/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="https://bocaletto-luca.github.io/Typing-Tutor/"/>
+
+  <!-- Author & Rights -->
+  <meta name="author"      content="Luca Bocaletto"/>
+  <meta name="publisher"   content="Luca Bocaletto"/>
+  <meta name="copyright"   content="© 2025 Luca Bocaletto"/>
+  <link rel="author"       href="https://github.com/bocaletto-luca"/>
+
+  <!-- Dublin Core Metadata -->
+  <meta name="DC.title"        content="Typing Tutor Game"/>
+  <meta name="DC.creator"      content="Luca Bocaletto"/>
+  <meta name="DC.subject"      content="typing tutor, web game, keyboard skills, speed, accuracy"/>
+  <meta name="DC.description"  content="Web game to enhance typing speed and accuracy. Tracks scores and levels up through challenges."/>
+  <meta name="DC.publisher"    content="Luca Bocaletto"/>
+  <meta name="DC.date"         content="2025-06-19"/>
+  <meta name="DC.language"     content="en"/>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type"        content="website"/>
+  <meta property="og:title"       content="Typing Tutor Game – Boost Your Typing Skills"/>
+  <meta property="og:description" content="Challenge yourself with this fun typing game. Five levels, live scoreboard, and performance tracking."/>
+  <meta property="og:url"         content="https://bocaletto-luca.github.io/Typing-Tutor/"/>
+  <meta property="og:image"       content="https://bocaletto-luca.github.io/Typing-Tutor/typing-tutor.png"/>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image"/>
+  <meta name="twitter:title"       content="Typing Tutor Game"/>
+  <meta name="twitter:description" content="Practice and improve your typing speed in this engaging web game."/>
+  <meta name="twitter:image"       content="https://bocaletto-luca.github.io/Typing-Tutor/typing-tutor.png"/>
+
+  <!-- Sitemap & robots -->
+  <link rel="robots" href="/your-repo/robots.txt" type="text/plain"/>
+  <link rel="sitemap" type="application/xml" href="/your-repo/sitemap.xml"/>
+
+  <!-- Google Site Verification -->
+  <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE"/>
+
+  <!-- Preconnect & Preload -->
+  <link rel="preconnect" href="https://fonts.gstatic.com"/>
+  <link rel="preload" href="/your-repo/style.css" as="style"/>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>Typing Tutor Game</h1>
+  </header>
+  
+  <!-- Main Container with Tabs -->
+  <div class="container">
+    <div class="tabs">
+      <button class="tablinks active" onclick="openTab(event, 'gameTab')" id="defaultTab">Game</button>
+      <button class="tablinks" onclick="openTab(event, 'recordsTab')">Records</button>
+    </div>
+    
+    <!-- Game Tab -->
+    <div id="gameTab" class="tabcontent active">
+      <h2>Type the Falling Letters!</h2>
+      <div class="game-info">
+        <label for="playerName">Player Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name">
+        <br><br>
+        <span>Score: <span id="scoreDisplay">0</span></span>
+        <span>Correct: <span id="correctDisplay">0</span></span>
+        <span>Level: <span id="levelDisplay">1</span></span>
+        <span>Errors: <span id="errorDisplay">0</span></span>
+      </div>
+      <div class="game-controls">
+        <button id="startGameBtn">Start Game</button>
+        <button id="stopGameBtn" disabled>Stop Game</button>
+      </div>
+      <canvas id="gameCanvas" width="600" height="400"></canvas>
+    </div>
+    
+    <!-- Records Tab -->
+    <div id="recordsTab" class="tabcontent">
+      <h2>High Scores</h2>
+      <div id="recordsArea">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Score</th>
+              <th>Correct</th>
+              <th>Level</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Records will be loaded here dynamically -->
+          </tbody>
+        </table>
+      </div>
+      <br>
+      <button class="btn-clear" onclick="clearRecords()">Clear Records</button>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer>
+    <p>Bocaletto Luca<p>
+    <p>Source Code:<a href="https://github.com/bocaletto-luca/Typing-Tutor/">Typing Tutor</a></p>
+  </footer>
+ <script src="main.js"></script>
+</body>
+</html>

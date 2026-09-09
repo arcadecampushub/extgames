@@ -1,0 +1,279 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
+  /* App, not document: kill the native touch reading/editing affordances — long-press text
+     magnifier, select-the-canvas + copy bubble, grey tap flash, double-tap page zoom. The sky
+     owns its gestures (see #sky touch-action: none); `manipulation` still lets panels scroll. */
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+/* Typing fields still need a caret and selection inside the field itself. */
+input, textarea { -webkit-user-select: text; user-select: text; }
+/* Two stacked full-screen canvases at the SAME z-index: tree order puts #sky-gl (WebGL stars,
+   first in the DOM) behind #sky (the 2D overlay: grid/lines/labels/markers/HUD). Equal z-index +
+   DOM order — NOT negative z-index, which would hide #sky-gl behind the body background (it paints
+   in a later step than negative-z children). z-index:0 keeps both above the body backdrop and below
+   the UI panels (z-index >= 5; #controls sits at 8 so its popovers beat the cards).
+   #sky must be transparent so the GL stars show through. */
+#sky, #sky-gl { position: fixed; inset: 0; display: block; width: 100vw; height: 100vh;
+  /* Mobile: 100vh is the LARGE viewport (URL bar hidden), pushing the canvas bottom off-screen
+     while the browser chrome shows; dvh tracks the actually-visible viewport. */
+  width: 100dvw; height: 100dvh;
+  z-index: 0; touch-action: none; }
+#sky { background: transparent; }
+#sky-gl { pointer-events: none; }
+
+#controls {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  font: 13px system-ui, sans-serif; color: #cdd6e6;
+  /* Match the compass pill's shade so the dark backdrop reads as one piece. */
+  background: rgba(5, 7, 13, 0.55);
+  user-select: none;
+  /* Above the object cards (5) and Highlights (6): browsers treat position:fixed as its own
+     stacking context, so the popovers' inner z-index can't escape — the bar itself must win. */
+  z-index: 8;
+}
+#controls .ctrl { display: flex; align-items: center; gap: 6px; }
+#controls .menu, #controls .ctrl-time, #controls .ctrl-location { position: relative; } /* popover anchors */
+#controls button, #controls input {
+  font: inherit; color: #cdd6e6; background: #121826; border: 1px solid #2a3550;
+  border-radius: 6px; padding: 4px 8px;
+}
+#controls button { cursor: pointer; }
+#controls button:hover { background: #1b2336; }
+#controls input[type="range"] { width: 100%; padding: 0; }
+#controls input.bad { border-color: #c5524a; }
+#controls .ctrl-label { opacity: 0.8; }
+/* The city label doubles as the picker button: reads as a label, not a chunky button. */
+#controls .ctrl-citybtn { background: none; border: 0; padding: 2px 4px;
+  text-decoration: underline dotted; cursor: pointer; }
+#controls .ctrl-citybtn:hover { background: none; opacity: 1; }
+#controls .now-badge { opacity: 0.7; }
+#controls .now-badge.live { color: #8fdcb0; opacity: 1; }
+#controls .search { flex: 1; min-width: 0; }
+#controls .search input[type="search"] { width: 100%; }
+.menu-button { font-size: 15px; line-height: 1; padding: 5px 10px; }
+/* Emoji-only sky toggles on the bar (🌅 / 🌙 / 📱): sized to match the menu button; the
+   name is the hover tooltip. Dim when off so the lit (.on) state reads at a glance. */
+#controls .icon-toggle { font-size: 15px; line-height: 1; padding: 5px 8px; }
+#controls .icon-toggle:not(.on) { opacity: 0.65; }
+@media (max-width: 640px) { #controls { font-size: 12px; gap: 6px; } }
+/* Mobile browsers auto-zoom the page when a focused text field's font is under 16px, and the
+   zoom sticks after the keyboard closes (whole UI cropped until the device rotates). 16px on
+   touch devices keeps focus from ever triggering it; maximum-scale=1 in the viewport meta is
+   the backstop. */
+@media (pointer: coarse) {
+  #controls input[type="search"],
+  #controls input[type="text"],
+  #controls input[type="datetime-local"] { font-size: 16px; }
+}
+
+/* View toggles (Constellations / Labels / Grid / Night): lit when active. */
+#controls .view-toggle.on { color: #9fd0ff; border-color: #2d5b8a; background: #16263c; }
+
+/* Object search: input in the bar, results list opens upward over the sky. */
+#controls .search { position: relative; }
+.search-results { display: none; list-style: none; margin: 0; padding: 4px;
+  position: absolute; left: 0; bottom: calc(100% + 6px); width: min(340px, calc(100vw - 20px)); max-height: 280px; overflow-y: auto;
+  background: rgba(12,16,26,0.97); border: 1px solid #2a3550; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); z-index: 7; }
+.search.open .search-results { display: block; }
+.search-item { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.search-item:hover, .search-item.active { background: #1b2336; }
+.search-name { color: #dce3f0; }
+.search-type { font-size: 11px; color: #8fb0e0; opacity: 0.85; }
+
+#card-host:empty { display: none; }
+#card-host { position: fixed; left: 0; right: 0; bottom: 48px; display: flex; justify-content: center; pointer-events: none; z-index: 5; }
+.card {
+  pointer-events: auto; position: relative; width: min(420px, calc(100vw - 24px));
+  margin: 0 12px; padding: 14px 16px; border-radius: 12px;
+  background: rgba(12, 16, 26, 0.96); border: 1px solid #2a3550; color: #dce3f0;
+  font: 14px/1.45 system-ui, sans-serif; box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.card-title { margin: 0 144px 8px 0; font-size: 18px; } /* clears the ×/★/👁/🔗 button row */
+.card-line { margin: 4px 0; }
+.card-line b { color: #aebbd6; font-weight: 600; }
+.card-close { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; padding: 0;
+  font-size: 20px; line-height: 1; color: #cdd6e6; background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; cursor: pointer; }
+.card-close:hover { background: #243049; }
+.card-fav { position: absolute; top: 8px; right: 44px; width: 28px; height: 28px; padding: 0;
+  font-size: 15px; line-height: 1; color: #cdd6e6; background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; cursor: pointer; }
+.card-fav:hover { background: #243049; }
+.card-fav.on { color: #ffd27d; border-color: #6a5230; }
+.card-eye { position: absolute; top: 8px; right: 80px; width: 28px; height: 28px; padding: 0;
+  font-size: 15px; line-height: 1; color: #cdd6e6; background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; cursor: pointer; }
+.card-eye:hover { background: #243049; }
+.card-share { position: absolute; top: 8px; right: 116px; width: 28px; height: 28px; padding: 0;
+  font-size: 14px; line-height: 1; color: #cdd6e6; background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; cursor: pointer; }
+.card-share:hover { background: #243049; }
+
+/* "Link copied" confirmation: floats above the card host, fades out on .gone, then is removed. */
+.copy-toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 8;
+  padding: 6px 12px; border-radius: 8px; background: rgba(12, 16, 26, 0.96);
+  border: 1px solid #2a3550; color: #dce3f0; font: 13px system-ui, sans-serif;
+  pointer-events: none; transition: opacity 0.5s; }
+.copy-toast.gone { opacity: 0; }
+/* Tappable variant (app-update notice): visibly a button, and must accept the tap. */
+.copy-toast.action { pointer-events: auto; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.copy-toast.action.gone { pointer-events: none; } /* a fading (invisible) toast must not catch taps */
+
+.fav-panel { position: fixed; top: 8px; left: 8px; z-index: 6; width: min(320px, calc(100vw - 16px));
+  font: 13px/1.4 system-ui, sans-serif; color: #dce3f0; }
+.fav-toggle { font: inherit; color: #cdd6e6; background: rgba(18,24,38,0.92); border: 1px solid #2a3550;
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.fav-toggle:hover { background: #1b2336; }
+.fav-body { margin-top: 6px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(12,16,26,0.95); border: 1px solid #2a3550; box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  max-height: calc(100vh - 64px); overflow-y: auto; }
+.fav-panel.collapsed .fav-body { display: none; }
+.fav-list { list-style: none; margin: 0; padding: 0; }
+.fav-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #1d2740; }
+.fav-row:first-child { border-top: 0; }
+.fav-row.below { opacity: 0.55; } /* favorite currently under the horizon */
+.fav-go { flex: 1; min-width: 0; text-align: left; font: inherit; color: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer; }
+.fav-name { font-weight: 600; }
+.fav-where { color: #9fb0cc; }
+.fav-remove { flex: none; width: 24px; height: 24px; padding: 0; font-size: 16px; line-height: 1;
+  color: #8fa0c0; background: none; border: 0; border-radius: 6px; cursor: pointer; }
+.fav-remove:hover { color: #dce3f0; background: #243049; }
+.fav-empty { margin: 0; color: #9fb0cc; }
+.fav-loading { margin: 0; color: #9fb0cc; }
+.fav-loading[hidden] { display: none; }
+.fav-sun { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid #1d2740; color: #9fb0cc; }
+.fav-sun[hidden] { display: none; }
+
+/* Boot splash: static HTML shown from first paint until main.js finishes loading the catalogues
+   (it adds .done after the first render, then removes the element). Serif capitals to match the
+   title branding. Sits under #night-overlay so night mode tints it like everything else. */
+#boot-splash { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px; background: #05070d;
+  transition: opacity 0.45s; }
+#boot-splash.done { opacity: 0; pointer-events: none; }
+/* letter-spacing pads the right edge of the last glyph; text-indent re-centres the line. */
+.boot-title { font: 28px Georgia, 'Times New Roman', serif; letter-spacing: 0.35em;
+  text-indent: 0.35em; text-transform: uppercase; color: #dce3f0; }
+.boot-sub { font: 13px Georgia, 'Times New Roman', serif; letter-spacing: 0.45em;
+  text-indent: 0.45em; text-transform: uppercase; color: #8fb0e0; }
+.boot-loading { margin-top: 16px; font: 11px system-ui, sans-serif; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #5a6a85; }
+/* The underlying error when boot fails (splashProblem): the diagnostic payload on phones. */
+.boot-error { font: 11px system-ui, sans-serif; color: #8895ab; max-width: min(440px, 86vw);
+  text-align: center; overflow-wrap: anywhere; }
+
+/* About modal: dim backdrop + a short card; click outside, the ×, or Escape dismisses. */
+.about-overlay { position: fixed; inset: 0; z-index: 20; background: rgba(2, 3, 7, 0.6);
+  display: flex; align-items: center; justify-content: center; }
+.about-card { position: relative; width: min(360px, calc(100vw - 24px)); margin: 12px;
+  padding: 14px 16px; border-radius: 12px;
+  background: rgba(12, 16, 26, 0.96); border: 1px solid #2a3550; color: #dce3f0;
+  font: 14px/1.45 system-ui, sans-serif; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+.about-card h2 { margin: 0 32px 8px 0; font-size: 18px; }
+.about-card p { margin: 4px 0; }
+.about-card a { color: #9fd0ff; }
+.about-close { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; padding: 0;
+  font-size: 20px; line-height: 1; color: #cdd6e6; background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; cursor: pointer; }
+.about-close:hover { background: #243049; }
+
+/* Night mode: a single multiply-red overlay tints the whole app (canvas + panels) red-on-black. */
+#night-overlay { position: fixed; inset: 0; background: #ff0000; mix-blend-mode: multiply;
+  pointer-events: none; z-index: 9999; display: none; }
+body.night #night-overlay { display: block; }
+.night-toggle.on { color: #ff9a8c; border-color: #5a2a26; }
+
+/* Tonight's events: highlighted rows at the top of the opened panel, best-first (the collapsed
+   chip carries the top event's emoji instead — see chipLabel). */
+.fav-event { display: flex; flex-direction: column; gap: 4px; margin: 0 0 6px; }
+.fav-event[hidden] { display: none; }
+.fav-event .event-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; font-size: 13px;
+  color: #dce4f5; background: rgba(70,110,210,0.20); border: 1px solid rgba(120,160,255,0.35);
+}
+.fav-event .event-text { line-height: 1.3; }
+.fav-event .event-action {
+  flex: none; cursor: pointer; font: inherit; color: #dce4f5;
+  background: #1b2336; border: 1px solid #2a3550; border-radius: 6px; padding: 3px 10px;
+}
+.fav-event .event-action:hover { background: #243152; }
+
+/* Popovers (menu / time): small panels that open above their bar button. One open at a time;
+   outside-tap or Escape closes (see ui/popover.js). Anchored to a position:relative parent (.menu / .ctrl-time set it). */
+.popover { position: absolute; bottom: calc(100% + 8px); z-index: 7;
+  background: rgba(12, 16, 26, 0.97); border: 1px solid #2a3550; border-radius: 10px;
+  padding: 10px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
+.popover[hidden] { display: none; }
+
+/* The ☰ menu popover: labelled sections of small toggle buttons. */
+.menu-panel { left: 0; width: min(300px, calc(100vw - 20px)); }
+.menu-section + .menu-section { margin-top: 10px; }
+.menu-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #7e90b5; margin-bottom: 4px; }
+.menu-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* Time chip + popover: the chip alone shows live (green ●) vs paused (⏸ date · time). */
+.time-chip { white-space: nowrap; }
+.time-chip.live { color: #8fdcb0; }
+.ctrl-time .popover { right: 0; width: min(280px, calc(100vw - 20px)); }
+.time-panel .time-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* City picker popover: filter box on top, scrollable list below. Opens UPWARD (the .popover
+   default) from the location row: the menu panel hugs the bottom bar, so there's no room below —
+   the 40vh/260px list cap keeps the top edge on-screen even on short viewports. */
+.city-picker { left: 0; width: min(260px, calc(100vw - 20px)); }
+.city-picker input[type="search"] { width: 100%; }
+.city-list { list-style: none; margin: 6px 0 0; padding: 0; max-height: min(40vh, 260px); overflow-y: auto; }
+.time-panel input[type="range"] { display: block; width: 100%; margin: 0 0 8px; }
+.time-panel input[type="datetime-local"] { width: 100%; }
+
+/* Screensaver mode: the chrome fades away and the cursor hides; the sky keeps rendering.
+   The opacity transition also eases everything back in on exit. body.timelapse (the debug
+   't' time-lapse) borrows the same hide for clean recordings — but NOT the brand/caption
+   below, which are the show's signature. */
+#controls, #card-host, #favorites-host { transition: opacity 1.2s ease; }
+body.screensaver, body.timelapse { cursor: none; }
+body.screensaver #controls, body.screensaver #card-host, body.screensaver #favorites-host,
+body.timelapse #controls, body.timelapse #card-host, body.timelapse #favorites-host {
+  opacity: 0;
+  pointer-events: none;
+}
+body.screensaver #controls *, body.screensaver #card-host *, body.screensaver #favorites-host *,
+body.timelapse #controls *, body.timelapse #card-host *, body.timelapse #favorites-host * {
+  pointer-events: none; /* children with their own pointer-events would re-enable inside a none parent */
+}
+
+/* Screensaver caption: the only text during the show — the framed target's name, bottom
+   center. main.js re-adds .show per target, restarting the fade-in. Under #night-overlay
+   (z-index 9999) so night mode tints it like everything else. */
+#screensaver-label { display: none; }
+body.screensaver #screensaver-label {
+  display: block;
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 30px;
+  z-index: 4; /* above the canvases, below the UI panels (>= 5) */
+  text-align: center;
+  font: 22px/1.4 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  color: rgba(205, 222, 245, 0.92);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  opacity: 0;
+}
+body.screensaver #screensaver-label.show { animation: ss-caption-in 1.6s ease forwards; }
+@keyframes ss-caption-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* The app signs its own show: the name in the top-right corner, serif caps like the boot splash,
+   faded in with the same caption ease. Under #night-overlay so night mode tints it too. */
+#screensaver-brand { display: none; }
+body.screensaver #screensaver-brand {
+  display: block;
+  position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 16px;
+  font: 15px Georgia, 'Times New Roman', serif; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(220, 227, 240, 0.55);
+  animation: ss-caption-in 1.6s ease forwards;
+}

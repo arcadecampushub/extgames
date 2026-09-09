@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #050510;
+  color: #fff;
+  font-family: "Orbitron", sans-serif;
+}
+
+#game-container {
+  position: fixed;
+  inset: 0;
+}
+
+canvas {
+  display: block;
+}
+
+#ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#hud {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-size: 18px;
+  color: #0ff;
+  text-shadow: 0 0 10px #0ff;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 14px;
+  border: 1px solid #0ff;
+  border-radius: 5px;
+}
+
+#combo-stat {
+  color: #ff0055;
+  text-shadow: 0 0 10px #ff0055;
+  border-color: #ff0055;
+  opacity: 0.45;
+}
+
+#combo-stat.hot {
+  opacity: 1;
+  animation: combo-pulse 0.5s ease-out;
+}
+
+@keyframes combo-pulse {
+  0% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+#time-stat.low {
+  color: #ff3333;
+  text-shadow: 0 0 10px #ff3333;
+  border-color: #ff3333;
+  animation: blinker 0.6s linear infinite;
+}
+
+#toast {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 34px;
+  font-weight: 700;
+  color: #0ff;
+  text-shadow: 0 0 18px #0ff;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+#toast.pop {
+  animation: toast-pop 1.2s ease-out;
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.12);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 40px;
+  border: 2px solid #ff0055;
+  box-shadow: 0 0 30px #ff0055;
+  border-radius: 10px;
+  max-width: 90vw;
+}
+
+h1 {
+  font-size: 48px;
+  margin: 0 0 20px 0;
+  color: #ff0055;
+  text-shadow: 0 0 20px #ff0055;
+  letter-spacing: 5px;
+}
+
+p {
+  font-size: 24px;
+  color: #fff;
+}
+
+.blink {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+.overlay {
+  pointer-events: auto; /* overlays double as tap-to-start on touch */
+}
+
+#touch-controls {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 4vw 5vw;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  #touch-controls {
+    display: flex;
+  }
+}
+
+.tcluster {
+  display: flex;
+  gap: 4vw;
+}
+
+.tbtn {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  min-width: 17vw;
+  padding: 4.5vw 3vw;
+  text-align: center;
+  font-size: 5vw;
+  color: #0ff;
+  text-shadow: 0 0 10px #0ff;
+  background: rgba(0, 20, 30, 0.45);
+  border: 1px solid rgba(0, 255, 255, 0.6);
+  border-radius: 12px;
+}
+
+.tbtn.held {
+  background: rgba(0, 255, 255, 0.25);
+}

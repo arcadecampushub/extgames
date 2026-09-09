@@ -1,0 +1,13 @@
+{
+  "name": "neon-night-racer",
+  "private": true,
+  "type": "module",
+  "description": "Dev tooling only — the game itself is a static site with no build step.",
+  "scripts": {
+    "test": "node tests/smoke.mjs",
+    "assets": "node tools/generate-assets.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}

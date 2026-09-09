@@ -1,0 +1,34 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+test('stars.json is a sane magnitude-limited catalog', async () => {
+  const stars = JSON.parse(await readFile(new URL('../data/stars.json', import.meta.url), 'utf8'));
+  assert.ok(Array.isArray(stars), 'should be an array');
+  assert.ok(stars.length > 100000 && stars.length < 130000, `unexpected count ${stars.length}`);
+  for (const s of stars) {
+    assert.ok(Number.isFinite(s.ra) && s.ra >= 0 && s.ra < 360, `bad ra ${s.ra}`);
+    assert.ok(Number.isFinite(s.dec) && s.dec >= -90 && s.dec <= 90, `bad dec ${s.dec}`);
+    // Kept stars are within the magnitude cut, OR named (faint-but-famous stars
+    // are pulled in past the limit so they stay searchable).
+    assert.ok(Number.isFinite(s.mag) && (s.mag <= 9.6 || s.name), `bad mag ${s.mag} (unnamed)`);
+    assert.ok(s.dist === null || (Number.isFinite(s.dist) && s.dist > 0), `${s.name || s.id} dist must be null or positive`);
+  }
+  // A few bright named stars should survive a mag<=9.6 cut.
+  const names = new Set(stars.map((s) => s.name).filter(Boolean));
+  assert.ok(names.has('Sirius'), 'Sirius should be present');
+  // Faint-but-named stars below the cut should be pulled in for search (e.g. Proxima Centauri at mag ~11).
+  assert.ok(names.has('Proxima Centauri'), 'Proxima Centauri should be present despite being fainter than the cut');
+
+  // Each entry carries the full field schema the renderer consumes.
+  for (const key of ['id', 'ra', 'dec', 'mag', 'bv', 'name', 'con', 'hip', 'dist']) {
+    assert.ok(key in stars[0], `missing field "${key}" on star records`);
+  }
+
+  // Sirius should have a known distance.
+  const sirius = stars.find((s) => s.name === 'Sirius');
+  assert.ok(sirius && Number.isFinite(sirius.dist), 'Sirius should have a distance');
+
+  // Catalog is sorted brightest-first (ascending magnitude).
+  assert.ok(stars[0].mag <= stars[stars.length - 1].mag, 'should be sorted by ascending magnitude');
+});

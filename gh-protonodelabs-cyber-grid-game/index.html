@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cyber Grid Game | Proto-Node Labs</title>
+    <meta
+      name="description"
+      content="Cyber Grid Game is a neon, cyberpunk, browser-based falling-block puzzle game with original soundtrack and responsive SFX."
+    />
+    <meta property="og:title" content="Cyber Grid Game | Proto-Node Labs" />
+    <meta
+      property="og:description"
+      content="Cyber Grid Game is a neon, cyberpunk, browser-based falling-block puzzle game with original soundtrack and responsive SFX."
+    />
+    <meta property="og:image" content="./assets/background_img.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Cyber Grid Game | Proto-Node Labs" />
+    <meta
+      name="twitter:description"
+      content="Cyber Grid Game is a neon, cyberpunk, browser-based falling-block puzzle game with original soundtrack and responsive SFX."
+    />
+    <meta name="twitter:image" content="./assets/background_img.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg-overlay" aria-hidden="true"></div>
+    <div id="grid-game-app" class="app">
+      <header class="top">
+        <div>
+          <a class="game-brand-link" href="https://proto-nodelabs.com/" target="_self" aria-label="Go to Proto-Node Labs home">
+            <div class="brand-lockup">
+              <span class="game-brandmark">
+                <img class="brand-logo game-logo-img" src="./assets/rocket.png?v=3" alt="" aria-hidden="true" width="30" height="30" />
+              </span>
+              <span class="eyebrow brand">PROTO-NODE LABS</span>
+            </div>
+          </a>
+          <h1 class="cyber-title">Cyber Grid Game</h1>
+        </div>
+        <div class="actions">
+          <button id="playBtn" class="btn play">Play</button>
+          <button id="startBtn" class="btn run is-hidden">New Run</button>
+          <button id="pauseBtn" class="btn ghost pause is-hidden">Pause</button>
+          <div class="sound-panel">
+            <div class="sound-row">
+              <button id="musicToggle" class="sound-toggle" type="button">MUSIC</button>
+              <input
+                id="musicVolume"
+                class="sound-slider"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="25"
+                aria-label="Music volume"
+              />
+            </div>
+            <div class="sound-row">
+              <button id="sfxToggle" class="sound-toggle" type="button">SFX</button>
+              <input
+                id="sfxVolume"
+                class="sound-slider"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="30"
+                aria-label="SFX volume"
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <div class="hud-row">
+          <section class="panel side-panel controls-panel">
+            <div class="panel-title">Controls</div>
+            <ul class="controls">
+              <li><span class="key">↑</span><span>Rotate</span></li>
+              <li><span class="key">←</span><span>Move left</span></li>
+              <li><span class="key">→</span><span>Move right</span></li>
+              <li><span class="key">↓</span><span>Soft drop</span></li>
+              <li><span class="key">Space</span><span>Hard drop</span></li>
+              <li><span class="key">P</span><span>Pause</span></li>
+            </ul>
+          </section>
+
+          <section class="panel playfield playfield-panel">
+            <div class="panel-title">Playfield</div>
+            <div class="board-wrap">
+              <canvas id="game" class="board" width="150" height="300"></canvas>
+            </div>
+            <div class="hud">
+              <div class="hud-item">
+                <div class="label">Score</div>
+                <div id="score" class="value">0</div>
+              </div>
+              <div class="hud-item">
+                <div class="label">Lines</div>
+                <div id="lines" class="value">0</div>
+              </div>
+              <div class="hud-item">
+                <div class="label">Level</div>
+                <div id="level" class="value">1</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel side-panel next-panel">
+            <div class="panel-title">Next</div>
+            <div class="stack">
+              <canvas id="next1" class="mini" width="110" height="110"></canvas>
+              <canvas id="next2" class="mini" width="110" height="110"></canvas>
+              <canvas id="next3" class="mini" width="110" height="110"></canvas>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

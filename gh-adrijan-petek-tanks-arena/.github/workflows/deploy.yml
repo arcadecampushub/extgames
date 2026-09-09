@@ -1,0 +1,80 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        # No dependencies to install for this HTML-only project
+        echo "No dependencies to install"
+
+    - name: Build (if needed)
+      run: |
+        # No build step required for HTML5 game
+        echo "No build step required"
+
+    - name: Validate HTML
+      run: |
+        # Basic HTML validation
+        if command -v tidy &> /dev/null; then
+          tidy -q -e tanks-arena.html || echo "HTML validation warnings found"
+        else
+          echo "HTML tidy not available, skipping validation"
+        fi
+
+    - name: Check file sizes
+      run: |
+        echo "File sizes:"
+        ls -lh *.html *.md
+        echo "Total size:"
+        du -sh .
+
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        cname:  # Add custom domain here if needed
+
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: HTML Validation
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tidy
+        tidy -q -e tanks-arena.html
+
+    - name: Check for broken links (basic)
+      run: |
+        # Check if all referenced URLs are accessible (basic check)
+        grep -o 'https://[^"]*' tanks-arena.html | head -10 | xargs -I {} sh -c 'curl -s -o /dev/null -w "%{http_code} %{url}\n" {}' || true
+
+    - name: Lint JavaScript (basic)
+      run: |
+        # Extract JavaScript and check for obvious syntax errors
+        sed -n '/<script>/,/<\/script>/p' tanks-arena.html | grep -v '<script>' | grep -v '</script>' > temp.js
+        node -c temp.js || echo "JavaScript syntax check failed"
+        rm temp.js

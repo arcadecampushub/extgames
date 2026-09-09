@@ -1,0 +1,65 @@
+{
+  "prop-gantry": {
+    "prompt": "overhead highway sign gantry, wide steel truss bridge structure spanning a road, glowing neon billboard panels, cyberpunk signage, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe621-4c76-74a7-8a02-0f851ccda158",
+    "refineId": "019fe622-1b53-7924-a8bc-a63990f6e525",
+    "file": "prop-gantry.glb",
+    "bytes": 7091632
+  },
+  "hero-car": {
+    "prompt": "sleek cyberpunk sports car, aggressive low wedge silhouette, dark gunmetal body with glowing neon pink accent lines and trim, thin horizontal light bar taillight, futuristic supercar, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe624-6131-728f-b522-17b8068a085a",
+    "refineId": "019fe625-6fcd-72ca-b6f6-47024762c96a",
+    "file": "hero-car.glb",
+    "bytes": 7751760
+  },
+  "traffic-sedan": {
+    "prompt": "futuristic compact sedan car, rounded body, dark blue paint with subtle cyan trim lights, ordinary commuter vehicle, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe624-6137-7380-a2d2-563aeef38059",
+    "refineId": "019fe625-70ac-72cb-87be-d0dc3185c359",
+    "file": "traffic-sedan.glb",
+    "bytes": 7418388
+  },
+  "traffic-suv": {
+    "prompt": "futuristic boxy SUV car, tall body, dark green paint with subtle amber trim lights, ordinary commuter vehicle, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe624-612d-728d-8ffd-e39465048d21",
+    "refineId": "019fe625-d3bf-73b0-9601-0ca3786ee69f",
+    "file": "traffic-suv.glb",
+    "bytes": 7594052
+  },
+  "traffic-taxi": {
+    "prompt": "futuristic yellow taxi cab car, roof sign, checkered stripe, worn paint, cyberpunk city taxi, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe626-fe5e-79e7-a509-97c166a65cfb",
+    "refineId": "019fe628-2a54-7337-b2da-03e88dbdd1b9",
+    "file": "traffic-taxi.glb",
+    "bytes": 9945676
+  },
+  "traffic-van": {
+    "prompt": "futuristic delivery van, boxy cargo body, dark purple paint with holographic decal panels, cyberpunk courier vehicle, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe626-fea8-731c-945a-6b7f1927ebf2",
+    "refineId": "019fe628-af3d-7a29-9ef4-bd33b2007bb6",
+    "file": "traffic-van.glb",
+    "bytes": 9953724
+  },
+  "building-tower": {
+    "prompt": "tall futuristic skyscraper tower, glass and steel, glowing neon cyan and magenta window strips and rooftop antenna spire, cyberpunk architecture, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe627-84bf-79f4-9a7f-0411d7f1b22e",
+    "refineId": "019fe628-4ccb-740d-a83c-6698f3221bef",
+    "file": "building-tower.glb",
+    "bytes": 9319924
+  },
+  "building-block": {
+    "prompt": "wide mid-rise futuristic apartment block, layered balconies, neon signage panels on facade, glowing windows, cyberpunk architecture, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe629-9809-7361-a64c-f3e8d8472b91",
+    "refineId": "019fe62b-47bd-73b4-b3b7-6b9cfec33aaa",
+    "file": "building-block.glb",
+    "bytes": 11097628
+  },
+  "building-pagoda": {
+    "prompt": "futuristic neon pagoda tower, stacked tiered roofs with glowing pink eave lights, cyberpunk asian architecture, holographic sign, retro-futuristic synthwave night city game asset, low poly, game-ready, clean silhouette, PBR textures",
+    "previewId": "019fe629-985f-7a54-85d6-cc0577e37d9a",
+    "refineId": "019fe62a-a0e5-7638-a846-e4ca31b50533",
+    "file": "building-pagoda.glb",
+    "bytes": 11978236
+  }
+}
