@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html style='height:100%;
+  background: linear-gradient(#0080ff 0%,#79e1ff 70%,#009e00 71%,#00ff00 100%);
+  background-attachment: fixed;'>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<script src='js/swLoader.js'></script>
+<link rel="icon" href="assets/background-castle.png">
+<link rel="apple-touch-icon" href="assets/background-castle.png">
+</head>
+<body>
+<p id='detectRenderer'>Unable to detect Phaser renderer ;-(</p>
+<form action='index.html'>
+<p>Change Phaser renderer to
+  <select id='choice' >
+    <option value="CANVAS">Phaser.CANVAS</option>
+    <option value="WEBGL">Phaser.WEBGL</option>
+    <option value="AUTO">Phaser.AUTO</option>
+    <option value="HEADLESS">Phaser.HEADLESS</option>
+  </select>
+</p>
+<p>Resolution: </p>
+<p>
+  <input type="range" min='0.5' max='4' step='0.25' id='resolution'>
+  <span id='res'>0</span>
+</p>
+<input type="checkbox" id='disableAudio'><label for="disableAudio">Disable audio</label>
+<p><input value="OK" type="submit" onclick='setRenderer()'></p>
+</form>
+<p>Test HTML5 audio tag<br>
+<audio controls=controls loop=loop>
+  <source src="assets/sound/music.ogg" type="audio/ogg">
+  <source src="assets/sound/music.mp3" type="audio/mpeg">
+</audio></p>
+<script>
+localStorage.removeItem('ShapeClear.renderer');
+var detectRenderer = document.getElementById('detectRenderer');
+var choiceBox = document.getElementById('choice');
+var renderer = localStorage.getItem('ShapeClear_renderer') || 'AUTO';
+var resIn = document.getElementById('resolution');
+var resOut = document.getElementById('res');
+var resolution = localStorage.getItem('ShapeClear_resolution');
+if (renderer) {
+    detectRenderer.innerText = 'You are using ' + renderer + ' as Phaser renderer';
+    var ops = choiceBox.options;
+    for (var i = 0; i < ops.length; i++) {
+        if (ops[i].value === renderer) {
+            ops[i].selected = "selected";
+        }
+    }
+}
+else {
+    detectRenderer.innerText = 'You have not played Shape Clear yet';
+}
+if (resolution) {
+    resIn.value = resOut.innerText = resolution;
+}
+else {
+    resIn.value = resOut.innerText = 1;
+}
+resIn.max = window.devicePixelRatio || 1;
+resIn.max = Math.round(resIn.max * 4) / 4;
+resIn.addEventListener('input', function() {
+    resOut.innerText = resIn.value;
+});
+resIn.addEventListener('change', function() {
+    resOut.innerText = resIn.value;
+});
+function setRenderer() {
+    localStorage.setItem('ShapeClear_renderer', choiceBox.value);
+    localStorage.setItem('ShapeClear_resolution', resIn.value);
+    localStorage.setItem('ShapeClear_disableAudio', disableAudio.checked);
+}
+</script>
+</body>
+</html>

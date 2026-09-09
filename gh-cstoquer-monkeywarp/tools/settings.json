@@ -1,0 +1,99 @@
+{
+	"windowSize": {
+		"width": 1314,
+		"height": 694
+	},
+	"state": {
+		"globals": {
+			"zoom": 2
+		},
+		"mapEditor": {
+			"x": 160,
+			"y": 20,
+			"open": true,
+			"width": 744,
+			"height": 616,
+			"layers": [
+				{
+					"type": "color",
+					"color": "rgb(17,52,32)"
+				},
+				{
+					"type": "map",
+					"id": "assets/maps.json:ending/B"
+				},
+				{
+					"type": "map",
+					"id": "assets/maps.json:ending/L0"
+				}
+			]
+		},
+		"mapClipboard": {
+			"x": 1104,
+			"y": 452,
+			"open": true,
+			"width": 200,
+			"height": 216
+		},
+		"tilesheet": {
+			"x": 912,
+			"y": 20,
+			"open": true
+		},
+		"tileBrush": {
+			"x": 912,
+			"y": 452,
+			"open": true,
+			"width": 184,
+			"height": 216
+		},
+		"palette": {
+			"x": 0,
+			"y": 628,
+			"open": true,
+			"width": 152,
+			"height": 40
+		},
+		"spriter": {
+			"x": 880,
+			"y": 388,
+			"open": false,
+			"zoom": 5
+		},
+		"assets": {
+			"x": 0,
+			"y": 20,
+			"open": true,
+			"width": 152,
+			"height": 584,
+			"assets": {
+				"entity": {
+					"banana": {},
+					"doors": {},
+					"worm": {}
+				},
+				"font": {},
+				"hud": {},
+				"icon": {},
+				"illustrations": {},
+				"maps.json": {}
+			}
+		},
+		"console": {
+			"x": 240,
+			"y": 324,
+			"open": false,
+			"width": 632,
+			"height": 328
+		},
+		"settings": {
+			"x": 400,
+			"y": 260,
+			"open": false
+		},
+		"menu": {
+			"devtool": true
+		},
+		"colorPicker": {}
+	}
+}

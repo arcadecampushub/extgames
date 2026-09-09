@@ -1,0 +1,74 @@
+#dashboard-controls {
+  button {
+    border: solid 1px hsla(0, 0%, 0%, 0.25);
+    border-radius: 3px;
+    padding: 4px 6px;
+    background-color: var(--button-background-color);
+    font-family: var(--sans-serif);
+    color: var(--button-color);
+    &:not([disabled]):hover:active,
+    &:not([disabled]):focus:active {
+      --button-background-color: var(--button-background-color-active);
+    }
+    &:focus {
+      outline-width: 0;
+    }
+    &.warn {
+      --button-background-color: var(--button-warn-background-color);
+      &:not([disabled]):hover:active,
+      &:not([disabled]):focus:active {
+        --button-background-color: var(--button-warn-background-color-active);
+      }
+    }
+    &:disabled {
+      --button-background-color: var(--button-disabled-background-color);
+    }
+  }
+  a {
+    font-size: 14px;
+  }
+  .go-back {
+    margin-left: 5px;
+  }
+}
+
+input[type='text'] {
+  appearance: none;
+  border-radius: 3px;
+  padding: 4px 8px;
+  border: solid 1px #aaa;
+  box-sizing: border-box;
+  font-size: 16px;
+  text-align: center;
+  &:focus {
+    outline-width: 0;
+    border-color: var(--input-focus-border-color);
+    box-shadow: 0 0 5px 2px var(--input-focus-box-shadow-color);
+  }
+}
+
+#new-player-name {
+  display: block;
+  width: 150px;
+  margin: 0 auto;
+  margin-bottom: 10px;
+}
+
+#share-controls {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  position: relative;
+  margin-bottom: 10px;
+}
+#share-link {
+  width: 150px;
+  font-size: 12px;
+}
+#copy-share-link:last-of-type {
+  margin-right: 0;
+  transition: background-color 1000ms ease-in-out;
+  &:hover:active {
+    transition-duration: 0ms;
+  }
+}

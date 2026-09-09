@@ -1,0 +1,44 @@
+@use 'mixins' as *;
+
+:root {
+  --app-background-color: hsl(0, 0%, 100%);
+  --app-text-color: hsl(0, 0%, 0%);
+  --app-link-color: hsl(220, 60%, 50%);
+  --update-notification-color: hsl(207, 60%, 50%);
+  --empty-chip-slot-border-color: hsl(0, 0%, 80%);
+  --button-background-color: hsl(100, 100%, 30%);
+  --button-color: hsl(0, 0%, 100%);
+  --button-background-color-active: hsl(100, 69%, 43%);
+  --button-disabled-background-color: hsl(0, 0%, 67%);
+  --button-warn-background-color: hsl(28, 100%, 43%);
+  --button-warn-background-color-active: hsl(28, 90%, 53%);
+  --input-focus-border-color: hsl(220, 60%, 50%);
+  --input-focus-box-shadow-color: hsl(210, 80%, 70%);
+
+  // Player/chip colors
+  --player-color-black: hsl(0, 0%, 27%);
+  --player-color-blue: hsl(220, 60%, 50%);
+  --player-color-red: hsl(0, 60%, 50%);
+
+  // Dark mode
+  @media (prefers-color-scheme: dark) {
+    --app-background-color: hsl(0, 0%, 7%);
+    --app-text-color: hsl(0, 0%, 100%);
+    --app-link-color: hsl(220, 100%, 65%);
+    --empty-chip-slot-border-color: hsl(0, 0%, 20%);
+    --player-color-black: hsl(0, 0%, 40%);
+    --player-color-blue: hsl(220, 82%, 37%);
+    --player-color-red: hsl(0, 69%, 43%);
+  }
+}
+
+// Define standard player colors that any element can use
+.red {
+  --player-color: var(--player-color-red);
+}
+.blue {
+  --player-color: var(--player-color-blue);
+}
+.black {
+  --player-color: var(--player-color-black);
+}

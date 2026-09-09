@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Matches index.html (no viewport-fit=cover). -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safe-area sandbox</title>
+<style>
+    * { box-sizing: border-box; margin: 0; }
+    /* SCROLLABLE document (deliberately NOT overflow:hidden) — so iOS gets the
+       document-scroll gesture it needs to collapse its URL bar. The experiment:
+       does a normal scrollable page dodge the top cut-off that the locked
+       overflow:hidden app-shell suffers? */
+    html { background: #0c1018; }
+    body { min-height: 100dvh; background: #0c1018; color: #e8edf5;
+        font: 15px/1.45 -apple-system, system-ui, sans-serif; padding: 64px 14px 16px; }
+
+    /* The watched element — like the launcher's top-right button. */
+    #topbar { position: fixed; top: 12px; right: 12px; z-index: 20;
+        width: 46px; height: 46px; border-radius: 9px;
+        background: #ff3b6b; color: #fff; font-weight: 800; font-size: 20px;
+        display: flex; align-items: center; justify-content: center; }
+    body.pad-env  #topbar { top: max(12px, env(safe-area-inset-top)); }
+    body.pad-44   #topbar { top: 44px; }
+    body.pad-50   #topbar { top: 50px; }
+    body.pad-60   #topbar { top: 60px; }
+    /* Orientation-gated: offset ONLY in portrait (Chrome hides its URL bar in
+       landscape, so landscape stays at the 12px default). */
+    @media (orientation: portrait) { body.pad-port #topbar { top: 48px; } }
+    /* Promote the button to its own compositor layer. Often stops iOS from
+       detaching position:fixed elements during the URL-bar collapse scroll. */
+    body.gpu #topbar { transform: translateZ(0); -webkit-transform: translateZ(0); }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+    button { font: inherit; padding: 9px 11px; border-radius: 8px;
+        border: 1px solid #33405a; background: #1c2332; color: #e8edf5; }
+    button.on { background: #21c46a; border-color: #21c46a; color: #04110a; font-weight: 700; }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 12.5px;
+        background: #11161f; border: 1px solid #222c3c; border-radius: 8px; padding: 9px; }
+    .hint { opacity: .75; font-size: 13px; margin: 8px 0; }
+    .row { padding: 15px 12px; border-bottom: 1px solid #1b2433; }
+</style>
+</head>
+<body>
+<div id="topbar">▦</div>
+
+<div><b>Safe-area sandbox</b> — this page is scrollable. Rotate to landscape and
+    back to portrait to trigger the cut-off, then <b>scroll the whole page down</b>
+    and watch the ▦ box top-right and Chrome's URL bar.</div>
+
+<div class="controls">
+    <button id="t-pad">top offset: 12px</button>
+    <button id="t-gpu">GPU layer: OFF</button>
+    <button id="t-cover">viewport-fit: auto</button>
+</div>
+
+<pre id="dump">measuring…</pre>
+<div class="hint">Does scrolling down collapse the URL bar and free the ▦ box?
+    (If yes, making the arcade scrollable is the fix.)</div>
+
+<div id="list"></div>
+
+<script>
+    // ---- tall content so the DOCUMENT scrolls ----
+    const list = document.getElementById('list');
+    for (let i = 1; i <= 40; i++) {
+        const r = document.createElement('div');
+        r.className = 'row';
+        r.textContent = 'scrollable content row ' + i;
+        list.appendChild(r);
+    }
+
+    // ---- env() inset probe (0 unless viewport-fit=cover is on) ----
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;'
+        + 'pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right)'
+        + ' env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    document.body.appendChild(probe);
+
+    function render() {
+        const c = getComputedStyle(probe);
+        const vv = window.visualViewport || {};
+        const bar = document.getElementById('topbar').getBoundingClientRect();
+        document.getElementById('dump').textContent = [
+            'env inset  T/R/B/L: ' + c.paddingTop + ' / ' + c.paddingRight
+                + ' / ' + c.paddingBottom + ' / ' + c.paddingLeft,
+            'window.innerHeight:  ' + window.innerHeight,
+            'window.outerHeight:  ' + window.outerHeight,
+            'visualViewport.height:    ' + Math.round(vv.height || 0),
+            'visualViewport.offsetTop: ' + Math.round(vv.offsetTop || 0),
+            'scrollY:             ' + Math.round(window.scrollY),
+            'topbar rect.top:     ' + Math.round(bar.top),
+            'orientation: ' + (window.innerHeight >= window.innerWidth ? 'portrait' : 'landscape'),
+        ].join('\n');
+    }
+
+    // ---- toggles ----
+    const body = document.body;
+    function wire(id, fn) { document.getElementById(id).addEventListener('click', () => { fn(); render(); }); }
+
+    const padModes   = ['12px', 'env (live)', 'portrait 48 / land 12', 'fixed 50px', 'fixed 60px'];
+    const padClasses = [null,   'pad-env',    'pad-port',               'pad-50',     'pad-60'];
+    let padMode = 0;
+    wire('t-pad', () => {
+        padMode = (padMode + 1) % padModes.length;
+        padClasses.forEach((cls, i) => { if (cls) body.classList.toggle(cls, i === padMode); });
+        const b = document.getElementById('t-pad');
+        b.textContent = 'top offset: ' + padModes[padMode];
+        b.classList.toggle('on', padMode !== 0);
+    });
+
+    wire('t-gpu', () => {
+        const on = body.classList.toggle('gpu');
+        const b = document.getElementById('t-gpu');
+        b.textContent = 'GPU layer: ' + (on ? 'ON' : 'OFF');
+        b.classList.toggle('on', on);
+    });
+
+    wire('t-cover', () => {
+        const vp = document.querySelector('meta[name="viewport"]');
+        let cnt = vp.getAttribute('content');
+        const on = !/viewport-fit=cover/.test(cnt);
+        cnt = on ? cnt + ', viewport-fit=cover' : cnt.replace(/,?\s*viewport-fit=cover/, '');
+        vp.setAttribute('content', cnt);
+        const b = document.getElementById('t-cover');
+        b.textContent = 'viewport-fit: ' + (on ? 'cover' : 'auto');
+        b.classList.toggle('on', on);
+    });
+
+    render();
+    addEventListener('resize', render);
+    addEventListener('scroll', render, true);
+    addEventListener('orientationchange', () => setTimeout(render, 300));
+    if (window.visualViewport) {
+        visualViewport.addEventListener('resize', render);
+        visualViewport.addEventListener('scroll', render);
+    }
+    setInterval(render, 400);
+</script>
+</body>
+</html>

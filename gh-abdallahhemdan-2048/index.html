@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>HamDola 2048 Game</title>
+    <link rel="icon" href="images/favicon.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body onload="startGame()">
+    <div class="container">
+      <div class="heading">
+        <h1 class="title">
+          <a href="/">
+            <span>2</span>
+            <span>0</span>
+            <span>4</span>
+            <span>8</span>
+          </a>
+        </h1>
+        <div class="scores-container">
+          <div class="score">0</div>
+        </div>
+      </div>
+
+      <!-- <header>
+      <div class="title">HamDola<span> 2048</span></div>
+      <div class="score">0</div>
+    </header> -->
+      <section id="grid-container" class="grid-container"></section>
+      <section class="controls">
+        <button class="reset btn btn-outline-primary" onclick="newGame()">
+          RESET
+        </button>
+      </section>
+      <div id="overlay-1">
+        <div id="text-1">
+          Game Over<br />
+          <button class="btn btn-outline-primary" onclick="rePlay(2)">
+            RESET
+          </button>
+          <!-- <button
+          class="btn btn-outline-primary"
+          onclick="continueWithOldBoard(2)"
+        >
+          Continue With Old Board
+        </button> -->
+        </div>
+      </div>
+      <div id="overlay-2">
+        <div id="text-2">
+          Congrats, Great Job 🎈🎉<br />
+          <button class="wide btn btn-outline-primary" onclick="rePlay(1)">
+            RESET
+          </button>
+          <!-- <button
+          class="btn btn-outline-primary"
+          onclick="continueWithOldBoard(1)"
+        >
+          Continue With Old Board
+        </button> -->
+        </div>
+      </div>
+      <div id="overlay-3" onclick="endIntroOverLay()">
+        <div id="text-3" class="animate">
+          HamDola 2048 Game 🎮<br />
+          Click to start 🎈..
+          <!-- <button
+          class="btn btn-outline-primary"
+          onclick="continueWithOldBoard(1)"
+        >
+          Continue With Old Board
+        </button> -->
+        </div>
+      </div>
+    </div>
+    <script src="js/jquery-3.4.1.min.js" defer></script>
+    <script src="js/gameStates.js" defer></script>
+    <script src="js/utilities.js" defer></script>
+    <script src="js/animations.js" defer></script>
+    <script src="js/app.js" defer></script>
+    <script src="js/gameLogic.js" defer></script>
+  </body>
+</html>

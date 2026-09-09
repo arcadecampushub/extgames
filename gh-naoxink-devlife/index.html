@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DevLife</title>
+	<link id="css" rel="stylesheet" href="vendor/dragula/dragula.min.css">
+	<link id="css-dark-side" rel="stylesheet" href="">
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+		ga('create', 'UA-38408823-2', 'auto');
+		ga('send', 'pageview');
+	</script>
+</head>
+<body>
+	<div class="navbar">
+		<div class="brand"><span>devlife Intranet</span></div>
+		<div class="menu">
+			<div class="dropdown">
+				<button class="dropdown-button">Menu</button>
+				<div class="dropdown-content">
+					<ul>
+						<li id="save">Save (Beta)</li>
+						<li id="load">Load (Beta)</li>
+						<li class="disabled"><hr></li>
+						<li><a href="https://github.com/naoxink/devlife/issues" target="_blank">Issue tracker</a></li>
+						<li><a href="https://github.com/naoxink/devlife/wiki" target="_blank">Wiki</a></li>
+						<li class="disabled"><hr></li>
+						<li id="reset">! Reset game</li>
+						<li class="disabled"><hr></li>
+						<li class="disabled">Developed by naoxink</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="news" direction="right" behavior="scroll" scrollamount="60" scrolldelay="1000" loop="1"></div>
+	<div class="left">
+		<div class="button-section">
+			<p class="header">Stats</p>
+			<div class="help stat" data-title="The amount of money you have.">Money: <span id="money"></span></div>
+			<div class="help stat" data-title="The money per pulse you earn while a project in progress">Money per pulse: <span id="incPerPulse"></span></div>
+			<div class="help stat" data-title="Pulse speed while a project in progress">Pulse speed: <span id="pulseSpeed"></span></div>
+			<div class="help stat" data-title="This is the computer model you have at the moment">Computer Model: <span id="pcmodel"></span></div>
+			<div class="help stat" data-title="Your computer version. The higher the better.">Computer Version: <span id="computerVersion"></span></div>
+			<div class="help stat" data-title="Number of jobs you have. Maximum 4 jobs.">Jobs: <span id="jobs"></span></div>
+			<div class="help stat" data-title="">Achievements unlocked: <span id="achievement-resume"></span></div>
+			<div class="help stat">Wild pixels poped: <span id="wild-pixels-poped"></span></div>
+		</div>
+
+		<div class="button-section" id="projects-section">
+			<p class="header">Projects</p>
+			<div class="help stat" data-title="Projects completed. You earn money by completing projects">Projects completed: <span id="projects">0</span></div>
+			<div class="spaced thin"></div>
+			<button id="takeQuickProject" disabled="disabled">Take quick project</button>
+		</div>
+		<div class="button-section" id="improvements-section">
+			<p class="header">Improvements</p>
+		</div>
+		<div class="button-section achievements compact">
+			<p class="header">Achievements</p>
+			<div class="container">
+				<div id="achievement-list"></div>
+			</div>
+		</div>
+	</div>
+	<div class="right">
+		<div class="button-section">
+			<p class="header">Showcase</p>
+			<div id="showcase">
+				<p class="disabled empty">Your showcase is still empty</p>
+			</div>
+		</div>
+		<div class="button-section jobList">
+			<p class="header">Jobs</p>
+			<p class="stats">Job search status: <span id="job-finder-status">Not searching</span></p>
+			<button id="start-job-search">Start job search</button>
+			<button id="takeJob" disabled="disabled">Take job oportunity</button>
+			<ul class="job-list"></ul>
+		</div>
+		<div class="button-section" id="shop">
+			<p class="header">Shop</p>
+			<div id="shop-items"></div>
+		</div>
+		<div class="button-section" id="lottery">
+			<p class="header">Lottery</p>
+			<button id="buyTicket" class="help" data-title="Everyone has the right to be millionaire. Win a 1.000.000¢ prize!">Buy a ticket (1¢)</button>
+			<div class="stat">Money spent: <span id="moneySpent"></span></div>
+			<div class="stat">Money won: <span id="moneyWon"></span></div>
+			<div class="stat">Win percent: <span id="percentWon"></span></div>
+			<div id="info">-</div>
+			<div id="owned">-</div>
+			<div id="winner">-</div>
+		</div>
+	</div>
+
+	<script src="js/core.js"></script>
+	<script src="js/marquee.js"></script>
+	<script src="js/core.base.js"></script>
+	<script src="js/projects.js"></script>
+	<script src="js/achievements.js"></script>
+	<script src="js/improvements.js"></script>
+	<script src="js/employees.js"></script>
+	<script src="js/rents.js"></script>
+	<script src="js/stats.js"></script>
+	<script src="js/jobs.js"></script>
+	<script src="js/shop.js"></script>
+	<script src="js/terminal.js"></script>
+	<script src="vendor/dragula/dragula.min.js"></script>
+	<script src="js/themeswitcher.js"></script>
+	<script src="js/main.js"></script>
+</body>
+</html>

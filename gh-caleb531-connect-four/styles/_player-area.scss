@@ -1,0 +1,80 @@
+@use 'mixins' as *;
+
+:root {
+  --player-reaction-offset: -15px;
+  --player-reaction-transition-duration: 300ms;
+}
+
+#player-area {
+  position: relative;
+}
+
+#player-area-players {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--chip-margin);
+  text-align: center;
+}
+
+.player {
+  position: relative;
+  &:nth-child(1) {
+    margin-left: var(--chip-margin);
+    text-align: left;
+    .player-reaction {
+      left: var(--player-reaction-offset);
+    }
+  }
+  &:nth-child(2) {
+    margin-right: var(--chip-margin);
+    text-align: right;
+    .player-reaction {
+      right: var(--player-reaction-offset);
+    }
+  }
+  color: var(--player-color);
+}
+
+.player-name,
+.player-score {
+  opacity: 1;
+  transition: opacity var(--player-reaction-transition-duration) ease-in-out;
+  .player.is-reacting & {
+    opacity: 0;
+  }
+}
+
+.player-name {
+  font-size: 16px;
+  border-bottom: solid 2px transparent;
+  transition-property: border-color, opacity;
+  transition-duration: 150ms, var(--player-reaction-transition-duration);
+  transition-timing-function: ease-in-out;
+  .current-player & {
+    border-bottom-color: currentColor;
+  }
+}
+
+.player-score {
+  font-size: 32px;
+}
+
+.player-reaction {
+  position: absolute;
+  z-index: 10;
+  top: var(--player-reaction-offset);
+  user-select: none;
+}
+.player-reaction-symbol {
+  font-size: 64px;
+  transform: scale(0);
+  // Don't bounce back when shrinking to scale(0)
+  transition: all var(--player-reaction-transition-duration) cubic-bezier(0.6, 0, 0, 1);
+  transition-property: transform, text-shadow;
+  &.show {
+    transform: scale(1);
+    transition-timing-function: var(--bounce-transition-timing-function);
+    text-shadow: 0 1px 10px hsla(0, 0%, 0%, 0.25);
+  }
+}

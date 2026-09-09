@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LittleJS Arcade — Mosaic</title>
+<style>
+    /* Capture-friendly: pure black backdrop, no margins, no scrollbars. */
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+
+    /* Tight grid of game panels — gap 0 so panels butt right up against
+       each other. COLS x ROWS is set from JS via CSS custom properties. */
+    #grid {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(var(--cols), 1fr);
+        grid-template-rows: repeat(var(--rows), 1fr);
+        gap: 0;
+        background: #000;
+    }
+    #grid iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #000;
+    }
+
+    /* One-time hint — fades out on its own; clicking it (a user gesture) also
+       lets each game's audio resume if you want sound for the capture. */
+    #hint {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        z-index: 10;
+        padding: 8px 16px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, .6);
+        color: #fff;
+        font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        letter-spacing: .3px;
+        pointer-events: auto;
+        cursor: pointer;
+        transition: opacity .6s;
+    }
+    #hint.gone { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div id="grid"></div>
+<div id="hint">Mosaic running in demo mode (silent) · press H to hide this</div>
+
+<script>
+'use strict';
+
+// ============================================================================
+// Mosaic — loads a grid of LittleJS Arcade games at once, each in DEMO MODE
+// (`#demo`). That single flag makes menus.js hide all menu/HUD chrome and mute
+// audio, while every `demo:true` game self-runs its attract loop (AI / auto
+// input, restarts on its own game-over) — so there's nothing to click, hide, or
+// revive here. Built for capturing video, not for playing.
+//
+// Swap games / grid size by editing GAMES and COLS/ROWS below.
+// ============================================================================
+
+// Grid shape — COLS x ROWS panels (landscape; swap the two for portrait). Any
+// size works: the grid is filled to exactly COLS * ROWS from the game pools
+// below (cycling them when there are more cells than games), so it never
+// overflows or leaves blanks. Tweak these two freely.
+const COLS = 4;
+const ROWS = 4;
+
+// Verified pool. Every entry is flagged `demo:true` in index.html, so in `#demo`
+// it self-runs its attract loop (AI / auto input, loops on its own game-over)
+// while menus.js hides all menu + HUD chrome and mutes audio. These 22 are every
+// `demo:true` game — all confirmed to animate. The grid fills from here first.
+const GAMES = [
+    // High-action arcade
+    'missileDefense.html',  // missile command — explosions + tracer trails
+    'roboRescue.html',      // robotron — twin-stick swarm
+    'astroblast.html',      // asteroids — AI flies + shoots, auto-loops
+    'spaceIntruders.html',  // space invaders — marching aliens
+    'centibug.html',        // centipede — winding crawler
+
+    // Motion-forward
+    'geometryJump.html',    // geometry dash — nonstop auto-runner
+    'froggit.html',         // frogger — traffic + river
+    'tetrix.html',          // tetris — falling pieces
+    'brickout.html',        // breakout — bouncing ball
+    'pucMan.html',          // pac-man — maze chase
+
+    // Varied arcade
+    'snake.html',           // snake — growing trail
+    'matchThree.html',      // bejeweled — cascading gems
+    'boomer.html',          // kaboom — falling bombs
+    'moonLander.html',      // lunar lander — gravity descent
+    'floppyBird.html',      // flappy bird — pipe gauntlet
+
+    // Calmer sports + thinky (variety)
+    'pong.html',            // pong — paddle rally
+    //'freeThrow.html',       // basketball — timed free throws
+    //'connect4.html',        // drop four — AI vs AI discs
+    //'reversi.html',         // othello — AI vs AI flips
+    'checkers.html',        // draughts — AI vs AI jumps
+    'klondike.html',        // solitaire — auto-flip
+
+    // more
+    
+    'emojiSurvivors.html', 
+];
+
+// Extra candidates — NOT flagged `demo:true`, so UNVERIFIED in `#demo`: each may
+// animate via a live title backdrop, or may sit on a frozen frame (the engine
+// pauses a game whose title menu is up, even when that menu is hidden). Used
+// only to top up grids larger than the 22 above. Picked as the likeliest to
+// move (scrollers, racers, board-AI). Preview them and delete any that sit
+// static; promote the keepers up into GAMES.
+const CANDIDATES = [
+    'chess.html',           // chess — AI vs AI (slow, but does move)
+    'protector.html',       // defender — side-scrolling shooter
+    'powerwing.html',       // gradius — side-scrolling shmup
+    'riverStrike.html',     // river raid — vertical scroller
+    'moonbuggy.html',       // moon patrol — scrolling runner
+    'speedway.html',        // pole position — 3D road racer
+    'spyDriver.html',       // spy hunter — scrolling driver
+    'microRacer.html',      // micro machines — top-down racer
+    'zoomi.html',           // zuma — marble shooter
+    'orbitswarm.html',      // gravitar — orbiting fleets
+    'pinball.html',         // pinball — physics table
+    'jouster.html',         // joust — flapping mounts
+];
+
+const gridEl = document.getElementById('grid');
+gridEl.style.setProperty('--cols', COLS);
+gridEl.style.setProperty('--rows', ROWS);
+
+// Shuffle each pool independently (Fisher–Yates), then concatenate verified
+// first. So the layout is randomized every load, yet a grid of <= 22 panels
+// stays entirely within the confirmed-good GAMES; CANDIDATES only get pulled in
+// once the grid needs more than that.
+function shuffled(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+const pool = [...shuffled(GAMES), ...shuffled(CANDIDATES)];
+
+// Fill exactly COLS * ROWS panels, cycling the pool if the grid has more cells
+// than games (a few entries repeat) and trimming it if fewer. Either way the
+// grid is always full — no blanks, no overflow — whatever shape you pick.
+const panels = Array.from({ length: COLS * ROWS }, (_, i) => pool[i % pool.length]);
+
+// Each game loads with `#demo` — that's all it takes: menus.js detects the hash
+// and hides #littlejs-menus + mutes audio internally, and a `demo:true` game
+// self-runs its attract loop (AI / auto input, restarts on its own game-over).
+// This mirrors the launcher's hero cabinet exactly, so there's no hide-menus
+// CSS to inject, no PLAY button to click, and no watchdog.
+panels.forEach(file => {
+    const frame = document.createElement('iframe');
+    frame.src = '../games/' + file + '#demo';
+    // Allow autoplay / gamepad / fullscreen, same as the launcher's iframe.
+    frame.setAttribute('allow', 'autoplay *; gamepad *; fullscreen *');
+    frame.dataset.file = file;
+    gridEl.appendChild(frame);
+});
+
+// ----- Hint overlay: fade after a few seconds, dismiss on click or 'H'. -----
+const hintEl = document.getElementById('hint');
+const hideHint = () => hintEl.classList.add('gone');
+hintEl.addEventListener('click', hideHint);
+addEventListener('keydown', e => { if (e.key === 'h' || e.key === 'H') hideHint(); });
+setTimeout(hideHint, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+@import url("https://fonts.googleapis.com/css?family=Alegreya+Sans:400,700");
+
+body {
+  background-color: #c6bcb9;
+  color: #2b2826;
+  font-family: "Alegreya Sans", sans-serif;
+  font-size: 24px;
+  line-height: 1.4;
+  margin: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+main {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+button {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.item,
+.inner,
+button {
+  transition: all 0.2s;
+}
+
+.item {
+  background-color: #e86539;
+  border-radius: 12px;
+  padding: 4px;
+  margin: 16px;
+  box-shadow: 0 2px 0 #a05137;
+}
+
+.item.sticky,
+.item.primary.sticky {
+  position: sticky;
+  position: -webkit-sticky;
+  top: max(env(safe-area-inset-top), 10px);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.item .inner {
+  background-color: #e58e71;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.item .inner b {
+  color: #2b2826;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.item.primary {
+  background-color: #2b2826;
+  margin: 10px;
+  box-shadow: none;
+}
+
+.item.primary .inner {
+  background-color: #2b2826;
+  color: #948984;
+}
+
+.item.primary .inner b {
+  color: #ffffff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.item.unavailable {
+  background-color: #b3b3b3;
+  box-shadow: 0 2px 0 #a1a1a1;
+}
+
+.item.unavailable .inner {
+  background-color: #cac5c4;
+}
+
+.item.unavailable .inner .description {
+  border-top: 1px dashed #b3b3b3;
+}
+
+.item.unavailable button {
+  background-color: #b3b3b3;
+  text-shadow: 0 1px 0 #d9d9d9;
+}
+
+button {
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #e86539;
+  color: #4c271a;
+  text-shadow: 0 1px 0 #e58e71;
+  width: 100%;
+  padding: 4px 16px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:hover {
+  color: #000000;
+}
+
+button:active {
+  color: #000000;
+  background-color: #cf4c20;
+}
+
+button:disabled {
+  color: #333333;
+  opacity: 0.25;
+  cursor: default;
+}
+
+.item.primary button {
+  background-color: #2b2826;
+  color: #e86539;
+  text-shadow: 0 1px 0 #4c271a;
+}
+
+.item.primary button:active {
+  background-color: #000000;
+}
+
+.item.primary button:disabled {
+  background-color: #2b2826;
+  color: #e86539;
+}
+
+.inner .description {
+  font-size: 18px;
+  font-style: italic;
+  border-top: 1px dashed #e86539;
+  padding-top: 8px;
+  margin-top: 8px;
+}

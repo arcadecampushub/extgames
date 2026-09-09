@@ -1,0 +1,22 @@
+// Variables
+:root {
+  // Global
+  --bounce-transition-timing-function: cubic-bezier(0.6, 0, 0, 1.25);
+
+  // Fonts
+  --sans-serif: 'Ubuntu', sans-serif;
+
+  // Chip constants
+  --chip-size: 52px;
+  --chip-margin: 6px;
+  --chip-size-compact: 10.25vw;
+  --chip-margin-compact: 1.25vw;
+
+  // Page constants
+  --page-spacing-top: 40px;
+  --page-spacing-x: 20px;
+
+  // Dashboard variables
+  --dashboard-text-size: 14px;
+  --dashboard-text-size-hybrid: 16px;
+}

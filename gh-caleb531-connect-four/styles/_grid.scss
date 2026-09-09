@@ -1,0 +1,120 @@
+@use 'mixins' as *;
+
+// The game grid, including all of its layers as well as individual chips
+
+#grid {
+  position: relative;
+  padding-top: calc(var(--chip-size) + (var(--chip-margin) * 2));
+  cursor: default;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  @include if-compact-layout() {
+    padding-top: calc(var(--chip-size-compact) + (var(--chip-margin-compact) * 2));
+  }
+}
+#grid-columns {
+  display: flex;
+}
+.grid-column {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  // This ensures that empty columns do not occupy any less space
+  width: calc(var(--chip-size) + (var(--chip-margin) * 2));
+  @include if-compact-layout() {
+    width: calc(var(--chip-size-compact) + (var(--chip-margin-compact) * 2));
+  }
+}
+
+// Chips
+
+.chip-inner,
+.empty-chip-slot-inner {
+  display: block;
+  width: var(--chip-size);
+  height: var(--chip-size);
+  margin: var(--chip-margin);
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  @include if-compact-layout() {
+    width: var(--chip-size-compact);
+    height: var(--chip-size-compact);
+    margin: var(--chip-margin-compact);
+  }
+}
+
+.empty-chip-slot-inner {
+  border-color: var(--empty-chip-slot-border-color);
+}
+
+@keyframes fade-in-chip {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+// Pulse the pending chip to indicate that the app hasn't frozen
+@keyframes pulse-chip {
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.chip {
+  --chip-background-color: var(--player-color);
+  --chip-border-color: hsla(0, 0%, 0%, 0.25);
+  .chip-inner {
+    border-color: var(--chip-border-color);
+    background-color: var(--chip-background-color);
+  }
+  // The pending chip is the to-be-placed chip above the board
+  &.pending {
+    position: absolute;
+    top: 0;
+    left: 0;
+    // The falling pending chip should appear below the layer of placed chips
+    z-index: 20;
+    animation: fade-in-chip 100ms ease-in-out forwards;
+    .chip-inner-real {
+      animation: pulse-chip 1000ms ease-in-out infinite forwards;
+    }
+    // The clone is used to restore full opacity from the pulse animation of the
+    // real inner chip
+    .chip-inner-clone {
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 30;
+      transition: opacity 500ms ease-in-out;
+    }
+  }
+  &.pending.transition-x {
+    transition: transform 200ms var(--bounce-transition-timing-function);
+  }
+  &.pending.transition-y {
+    // Restart fade-in animation when next pending chip appears
+    animation: none;
+    // Set a falling transition with a rubber-banding effect at the end
+    transition: transform 500ms var(--bounce-transition-timing-function);
+    .chip-inner-clone {
+      opacity: 1;
+    }
+  }
+}
+
+// Fade out non-winning chips when the game has ended
+
+@keyframes fade-out-chip {
+  100% {
+    opacity: 0.3;
+  }
+}
+
+#game:not(.in-progress) .chip:not(.winning) {
+  animation: fade-out-chip 300ms ease-in-out forwards;
+}

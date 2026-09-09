@@ -1,0 +1,355 @@
+{
+  "demon": {
+    "agility": 17,
+    "health": 200,
+    "image": "demon",
+    "inventory": [
+      "fireBall",
+      "fireblade"
+    ],
+    "mana": 20,
+    "name": "demon",
+    "speed": 6,
+    "strength": 50,
+    "walksOn": [
+      "bush",
+      "marsh",
+      "waterTile"
+    ],
+    "wisdom": 10,
+    "xp": 20
+  },
+  "djinn": {
+    "agility": 0,
+    "health": 1,
+    "image": "djinn",
+    "mana": 0,
+    "name": "djinn",
+    "speed": 14,
+    "strength": 1,
+    "walksOn": [
+      "bush",
+      "marsh",
+      "waterTile"
+    ],
+    "wisdom": 0,
+    "xp": 1
+  },
+  "druidMale": {
+    "agility": 10,
+    "health": 80,
+    "image": "druidMale",
+    "inventory": [
+      "air",
+      "cloak",
+      "club",
+      "earth",
+      "fire",
+      "water"
+    ],
+    "mana": 60,
+    "name": "druid",
+    "speed": 4,
+    "strength": 14,
+    "wisdom": 10
+  },
+  "duckMageMale": {
+    "agility": 9,
+    "health": 40,
+    "image": "duckMageMale",
+    "inventory": [
+      "chaos",
+      "cloak",
+      "confusion",
+      "dagger",
+      "delay"
+    ],
+    "mana": 60,
+    "name": "duck mage",
+    "speed": 5,
+    "strength": 10,
+    "walksOn": [
+      "marsh",
+      "waterTile"
+    ],
+    "wisdom": 12
+  },
+  "elfMale": {
+    "agility": 15,
+    "health": 90,
+    "image": "elfMale",
+    "inventory": [
+      "arrows",
+      "bow",
+      "dagger",
+      "elvenCloak"
+    ],
+    "mana": 0,
+    "name": "elf",
+    "speed": 6,
+    "strength": 14,
+    "walksOn": [
+      "bush",
+      "marsh"
+    ],
+    "wisdom": 0
+  },
+  "fenix": {
+    "agility": 17,
+    "health": 40,
+    "image": "fenix",
+    "inventory": [
+      "fireblade"
+    ],
+    "mana": 5,
+    "name": "fenix",
+    "speed": 5,
+    "strength": 10,
+    "wisdom": 19,
+    "xp": 4
+  },
+  "goblin": {
+    "agility": 12,
+    "health": 30,
+    "image": "goblin",
+    "inventory": [
+      "leather",
+      "sword"
+    ],
+    "mana": 0,
+    "name": "goblin",
+    "speed": 4,
+    "strength": 15,
+    "wisdom": 0,
+    "xp": 1
+  },
+  "golem": {
+    "agility": 15,
+    "health": 80,
+    "image": "golem",
+    "inventory": [
+      "stoneAxe"
+    ],
+    "mana": 0,
+    "name": "golem",
+    "speed": 3,
+    "strength": 60,
+    "wisdom": 0,
+    "xp": 8
+  },
+  "hobgoblin": {
+    "agility": 15,
+    "health": 10,
+    "image": "hobgoblin",
+    "inventory": [
+      "dagger",
+      "dagger",
+      "cloak",
+      "throwingStar"
+    ],
+    "mana": 0,
+    "name": "hobgoblin",
+    "speed": 5,
+    "strength": 10,
+    "walksOn": [
+      "bush"
+    ],
+    "wisdom": 0,
+    "xp": 1
+  },
+  "knightMale": {
+    "agility": 11,
+    "health": 90,
+    "image": "knightMale",
+    "inventory": [
+      "chainmail",
+      "helmet",
+      "shield",
+      "sword"
+    ],
+    "mana": 0,
+    "name": "knight",
+    "speed": 4,
+    "strength": 24,
+    "wisdom": 0
+  },
+  "lightning": {
+    "agility": 0,
+    "health": 1,
+    "image": "lightning",
+    "inventory": [
+      "chock"
+    ],
+    "mana": 10,
+    "name": "lightning",
+    "speed": 8,
+    "strength": 4,
+    "walksOn": [
+      "bush",
+      "marsh",
+      "waterTile"
+    ],
+    "wisdom": 14,
+    "xp": 1
+  },
+  "magician": {
+    "agility": 10,
+    "health": 50,
+    "image": "magician",
+    "inventory": [
+      "arrows",
+      "cloak",
+      "confusion",
+      "crossbow",
+      "darkness"
+    ],
+    "mana": 10,
+    "name": "magician",
+    "speed": 4,
+    "strength": 12,
+    "wisdom": 10,
+    "xp": 5
+  },
+  "monk": {
+    "agility": 16,
+    "health": 60,
+    "image": "monk",
+    "inventory": [
+      "delay",
+      "earth",
+      "fire",
+      "leather",
+      "staff",
+      "water"
+    ],
+    "mana": 11,
+    "name": "monk",
+    "speed": 4,
+    "strength": 14,
+    "wisdom": 11,
+    "xp": 6
+  },
+  "orch": {
+    "agility": 9,
+    "health": 50,
+    "image": "orch",
+    "inventory": [
+      "leather",
+      "sabre"
+    ],
+    "mana": 0,
+    "name": "orch",
+    "speed": 4,
+    "strength": 14,
+    "wisdom": 0,
+    "xp": 4
+  },
+  "orchArcher": {
+    "agility": 10,
+    "health": 50,
+    "image": "orchArcher",
+    "inventory": [
+      "arrows",
+      "bow"
+    ],
+    "mana": 0,
+    "name": "orch archer",
+    "speed": 4,
+    "strength": 13,
+    "wisdom": 0,
+    "xp": 4
+  },
+  "shadowbeast": {
+    "agility": 10,
+    "health": 200,
+    "image": "shadowbeast",
+    "inventory": [
+      "club"
+    ],
+    "mana": 0,
+    "name": "shadowbeast",
+    "speed": 5,
+    "strength": 20,
+    "wisdom": 0,
+    "xp": 10
+  },
+  "skeleton": {
+    "agility": 7,
+    "health": 30,
+    "image": "skeleton",
+    "inventory": [
+      "chainNBall"
+    ],
+    "mana": 0,
+    "name": "skeleton",
+    "speed": 4,
+    "strength": 7,
+    "wisdom": 0,
+    "xp": 1
+  },
+  "troll": {
+    "agility": 7,
+    "health": 100,
+    "image": "troll",
+    "inventory": [
+      "stoneAxe"
+    ],
+    "mana": 0,
+    "name": "troll",
+    "speed": 3,
+    "strength": 20,
+    "wisdom": 0,
+    "xp": 2
+  },
+  "undine": {
+    "agility": 15,
+    "health": 30,
+    "image": "undine",
+    "inventory": [
+      "sabre"
+    ],
+    "lifespan": 36,
+    "mana": 0,
+    "name": "undine",
+    "speed": 6,
+    "strength": 20,
+    "walksOn": [
+      "marsh",
+      "waterTile"
+    ],
+    "wisdom": 0,
+    "xp": 3
+  },
+  "warrior": {
+    "agility": 14,
+    "health": 80,
+    "image": "warrior",
+    "inventory": [
+      "chainmail",
+      "club",
+      "throwingStar",
+      "throwingStar",
+      "throwingStar"
+    ],
+    "mana": 0,
+    "name": "warrior",
+    "speed": 4,
+    "strength": 12,
+    "wisdom": 0,
+    "xp": 6
+  },
+  "zombie": {
+    "agility": 10,
+    "health": 10,
+    "image": "zombie",
+    "inventory": [
+      "sabre"
+    ],
+    "mana": 0,
+    "name": "zombie",
+    "speed": 4,
+    "strength": 12,
+    "wisdom": 0,
+    "xp": 1
+  }
+}
