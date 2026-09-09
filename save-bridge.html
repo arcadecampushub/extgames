@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<title>Save bridge</title>
+</head>
+<body>
+<!--
+  Arcade Campus Hub — game save bridge.
+
+  Third-party games keep their progress in localStorage, which belongs to the
+  origin serving them, not to the hub. The hub therefore cannot read it: that
+  is the same-origin policy doing its job, and there is no way around it from
+  the outside.
+
+  This page IS that origin. The hub loads it in a hidden iframe and asks, over
+  postMessage, for a snapshot of the origin's localStorage — or to put one back.
+  That is what lets a save follow an account to another device.
+
+  Two rules keep it honest:
+    * only the origins in ALLOWED may talk to it,
+    * it does nothing except read and write localStorage on this origin.
+
+  Copy this file to the ROOT of each repo that serves games.
+-->
+<script>
+(function () {
+  "use strict";
+
+  /* Only the hub may drive this. Anything else is ignored, so a random page
+     cannot embed this file and harvest saves. */
+  var ALLOWED = [
+    "https://arcadecampushub.online",
+    "https://www.arcadecampushub.online",
+    "http://localhost:8787",
+    "http://127.0.0.1:8787"
+  ];
+
+  /* Vercel gives every deployment its own hostname, so match the project
+     rather than listing them.
+   *
+   * Both patterns are anchored and neither allows a dot inside the wildcard
+   * part. An earlier version ended in [a-z.]+ to mean "any TLD", which also
+   * matched dots — so arcadecampushub.online.evil.com satisfied it, and any
+   * attacker who registered that could read every save on this origin.
+   * A wildcard that spans a dot spans a domain boundary; it must never. */
+  var ALLOWED_PATTERNS = [
+    /^https:\/\/[a-z0-9-]+\.vercel\.app$/i,
+    /^https:\/\/([a-z0-9-]+\.)?arcadecampushub\.online$/i
+  ];
+
+  function permitted(origin) {
+    if (ALLOWED.indexOf(origin) !== -1) return true;
+    for (var i = 0; i < ALLOWED_PATTERNS.length; i++) {
+      if (ALLOWED_PATTERNS[i].test(origin)) return true;
+    }
+    return false;
+  }
+
+  var MAX_VALUE = 512 * 1024;     // skip anything absurd, per key
+
+  function snapshot() {
+    var out = {}, skipped = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key === null) continue;
+        var value = localStorage.getItem(key);
+        if (value === null) continue;
+        if (value.length > MAX_VALUE) { skipped++; continue; }
+        out[key] = value;
+      }
+    } catch (err) { /* storage disabled */ }
+    return { data: out, skipped: skipped };
+  }
+
+  /* Cookies.
+   *
+   * The largest single group of saving titles here keeps progress in a cookie,
+   * not localStorage — mostly older Flash-era ports that were written that
+   * way. Without this they are simply invisible to the hub.
+   *
+   * The honest limitation: document.cookie only exposes cookies whose path is
+   * a prefix of the current page's. This file sits at the origin root, so it
+   * sees path=/ cookies. A game that sets one with no explicit path scopes it
+   * to its own folder, and that one stays out of reach from here — hence
+   * `cookiePath` in the reply, so the hub can say so rather than silently
+   * showing nothing. HttpOnly cookies are never visible to script at all, but
+   * a static game host does not set those.
+   */
+  function readCookies() {
+    var out = {};
+    try {
+      String(document.cookie || "").split(";").forEach(function (part) {
+        var at = part.indexOf("=");
+        if (at < 1) return;
+        var name = part.slice(0, at).trim();
+        var value = part.slice(at + 1).trim();
+        if (!name || value.length > MAX_VALUE) return;
+        try { out[name] = decodeURIComponent(value); }
+        catch (e) { out[name] = value; }        // not percent-encoded
+      });
+    } catch (err) { /* cookies disabled */ }
+    return out;
+  }
+
+  function writeCookies(data, overwrite) {
+    var written = 0;
+    var existing = readCookies();
+    /* Two years: long enough to behave like a save, short enough to expire. */
+    var expires = new Date(Date.now() + 730 * 864e5).toUTCString();
+
+    Object.keys(data || {}).forEach(function (name) {
+      if (!overwrite && Object.prototype.hasOwnProperty.call(existing, name)) return;
+      try {
+        document.cookie = encodeURIComponent(name) + "=" +
+          encodeURIComponent(String(data[name])) +
+          "; path=/; expires=" + expires + "; SameSite=Lax";
+        written++;
+      } catch (err) { /* one bad name shouldn't sink the batch */ }
+    });
+    return written;
+  }
+
+  /* Merge, never wipe: a key already present here wins unless `overwrite` is
+     set, so restoring on a device that has newer progress can't destroy it. */
+  function restore(data, overwrite) {
+    var written = 0, kept = 0;
+    try {
+      Object.keys(data || {}).forEach(function (key) {
+        var existing = localStorage.getItem(key);
+        if (existing !== null && !overwrite) { kept++; return; }
+        try { localStorage.setItem(key, String(data[key])); written++; }
+        catch (err) { /* quota */ }
+      });
+    } catch (err) { /* storage disabled */ }
+    return { written: written, kept: kept };
+  }
+
+  /* ---------------------------------------------------------- indexedDB
+   *
+   * Plenty of games — anything Unity, and most of the newer HTML5 ones —
+   * keep their save in IndexedDB rather than localStorage. An audit of the
+   * catalogue found 18 titles storing progress *only* there, so a bridge
+   * that reads localStorage alone silently misses them.
+   *
+   * Values can be binary (Unity's IDBFS stores files as Uint8Array), which
+   * JSON cannot carry, so they are tagged and base64'd on the way out and
+   * rebuilt on the way back in.
+   */
+
+  var IDB_BUDGET = 3 * 1024 * 1024;   // per origin, encoded
+
+  function b64(bytes) {
+    var out = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(out);
+  }
+
+  function unb64(text) {
+    var bin = atob(text);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function encode(value) {
+    if (value instanceof Uint8Array) return { $b: b64(value) };
+    if (value instanceof ArrayBuffer) return { $b: b64(new Uint8Array(value)) };
+    if (ArrayBuffer.isView(value)) {
+      return { $b: b64(new Uint8Array(value.buffer)), $v: value.constructor.name };
+    }
+    if (value instanceof Date) return { $d: value.toISOString() };
+    if (value && typeof value === "object") {
+      var out = Array.isArray(value) ? [] : {};
+      Object.keys(value).forEach(function (k) { out[k] = encode(value[k]); });
+      return out;
+    }
+    return value;
+  }
+
+  function decode(value) {
+    if (value && typeof value === "object") {
+      if (typeof value.$b === "string") {
+        var bytes = unb64(value.$b);
+        if (value.$v && window[value.$v] && value.$v !== "Uint8Array") {
+          try { return new window[value.$v](bytes.buffer); } catch (e) { return bytes; }
+        }
+        return bytes;
+      }
+      if (typeof value.$d === "string") return new Date(value.$d);
+      var out = Array.isArray(value) ? [] : {};
+      Object.keys(value).forEach(function (k) { out[k] = decode(value[k]); });
+      return out;
+    }
+    return value;
+  }
+
+  function openDb(name, version) {
+    return new Promise(function (resolve, reject) {
+      var req = version ? indexedDB.open(name, version) : indexedDB.open(name);
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+      req.onblocked = function () { reject(new Error("blocked")); };
+    });
+  }
+
+  function readIdb() {
+    /* indexedDB.databases() is Chromium and Safari only. Firefox has no way
+       to enumerate, so there is nothing to snapshot there — say so rather
+       than reporting an empty success. */
+    if (!indexedDB || typeof indexedDB.databases !== "function") {
+      return Promise.resolve({ data: {}, unsupported: true });
+    }
+
+    return indexedDB.databases().then(function (list) {
+      var out = {};
+      var used = 0;
+
+      return (list || []).reduce(function (chain, info) {
+        return chain.then(function () {
+          if (!info.name || used > IDB_BUDGET) return;
+          return openDb(info.name).then(function (db) {
+            var stores = Array.prototype.slice.call(db.objectStoreNames);
+            if (!stores.length) { db.close(); return; }
+
+            return new Promise(function (resolve) {
+              var tx = db.transaction(stores, "readonly");
+              var left = stores.length;
+              var dbOut = {};
+
+              stores.forEach(function (storeName) {
+                var store = tx.objectStore(storeName);
+                var keysReq = store.getAllKeys();
+                var valsReq = store.getAll();
+                var pair = {};
+
+                keysReq.onsuccess = function () { pair.keys = keysReq.result; done(); };
+                valsReq.onsuccess = function () { pair.values = valsReq.result; done(); };
+                keysReq.onerror = valsReq.onerror = function () { finish(); };
+
+                function done() {
+                  if (!pair.keys || !pair.values) return;
+                  finish();
+                }
+                function finish() {
+                  if (pair.recorded) return;
+                  pair.recorded = true;
+                  if (pair.keys && pair.values) {
+                    dbOut[storeName] = pair.keys.map(function (k, i) {
+                      return { k: encode(k), v: encode(pair.values[i]) };
+                    });
+                  }
+                  if (--left === 0) {
+                    var text = JSON.stringify(dbOut);
+                    used += text.length;
+                    if (used <= IDB_BUDGET) out[info.name] = dbOut;
+                    db.close();
+                    resolve();
+                  }
+                }
+              });
+
+              tx.onerror = function () { db.close(); resolve(); };
+            });
+          }).catch(function () { /* locked or blocked — skip it */ });
+        });
+      }, Promise.resolve()).then(function () {
+        return { data: out, unsupported: false, bytes: used };
+      });
+    }).catch(function () { return { data: {}, unsupported: true }; });
+  }
+
+  function writeIdb(dump, overwrite) {
+    if (!indexedDB || !dump) return Promise.resolve({ written: 0 });
+    var written = 0;
+
+    return Object.keys(dump).reduce(function (chain, dbName) {
+      return chain.then(function () {
+        return openDb(dbName).then(function (db) {
+          var stores = Object.keys(dump[dbName])
+            .filter(function (s) { return db.objectStoreNames.contains(s); });
+          if (!stores.length) { db.close(); return; }
+
+          return new Promise(function (resolve) {
+            var tx = db.transaction(stores, "readwrite");
+            stores.forEach(function (storeName) {
+              var store = tx.objectStore(storeName);
+              dump[dbName][storeName].forEach(function (row) {
+                try {
+                  var key = decode(row.k);
+                  var value = decode(row.v);
+                  /* Only fill gaps unless told otherwise, so restoring onto a
+                     device with newer progress does not destroy it. */
+                  if (overwrite) {
+                    store.keyPath === null || store.keyPath === undefined
+                      ? store.put(value, key) : store.put(value);
+                    written++;
+                  } else {
+                    var probe = store.get(key);
+                    probe.onsuccess = function () {
+                      if (probe.result === undefined) {
+                        store.keyPath === null || store.keyPath === undefined
+                          ? store.put(value, key) : store.put(value);
+                        written++;
+                      }
+                    };
+                  }
+                } catch (e) { /* one bad row shouldn't sink the batch */ }
+              });
+            });
+            tx.oncomplete = function () { db.close(); resolve(); };
+            tx.onerror = function () { db.close(); resolve(); };
+          });
+        }).catch(function () { /* db missing on this device */ });
+      });
+    }, Promise.resolve()).then(function () { return { written: written }; });
+  }
+
+  function send(event, reply) {
+    event.source.postMessage(reply, event.origin);
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!permitted(event.origin)) return;
+
+    var msg = event.data;
+    if (!msg || msg.channel !== "ach-save-bridge") return;
+
+    var reply = { channel: "ach-save-bridge", id: msg.id, ok: true };
+
+    /* The IndexedDB paths are async, so they answer on their own. */
+    if (msg.action === "read") {
+      var shot = snapshot();
+      reply.data = shot.data;
+      reply.keys = Object.keys(shot.data).length;
+      reply.skipped = shot.skipped;
+      reply.cookies = readCookies();
+      reply.cookiePath = location.pathname;
+      readIdb().then(function (idb) {
+        reply.idb = idb.data;
+        reply.idbUnsupported = idb.unsupported;
+        reply.idbBytes = idb.bytes || 0;
+        send(event, reply);
+      }, function () { send(event, reply); });
+      return;
+    }
+
+    if (msg.action === "write") {
+      var res = restore(msg.data, !!msg.overwrite);
+      reply.written = res.written;
+      reply.kept = res.kept;
+      reply.cookiesWritten = writeCookies(msg.cookies, !!msg.overwrite);
+      writeIdb(msg.idb, !!msg.overwrite).then(function (out) {
+        reply.idbWritten = out.written;
+        send(event, reply);
+      }, function () { send(event, reply); });
+      return;
+    }
+
+    try {
+      if (msg.action === "ping") {
+        reply.host = location.host;
+        reply.idbSupported = !!(indexedDB && typeof indexedDB.databases === "function");
+        reply.cookiesSupported = navigator.cookieEnabled !== false;
+        reply.cookiePath = location.pathname;
+      } else if (msg.action === "remove") {
+        var gone = 0;
+        (msg.keys || []).forEach(function (key) {
+          try { localStorage.removeItem(key); gone++; } catch (err) {}
+        });
+        reply.removed = gone;
+      } else if (msg.action === "clear") {
+        try { localStorage.clear(); } catch (err) {}
+        /* Expire every cookie we can see, rather than leaving progress behind
+           after someone asked for a clean slate. */
+        try {
+          Object.keys(readCookies()).forEach(function (name) {
+            document.cookie = encodeURIComponent(name) +
+              "=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          });
+        } catch (err) {}
+        reply.cleared = true;
+      } else {
+        reply.ok = false;
+        reply.error = "Unknown action";
+      }
+    } catch (err) {
+      reply.ok = false;
+      reply.error = String(err && err.message || err);
+    }
+
+    event.source.postMessage(reply, event.origin);
+  });
+
+  /* Announce readiness so the hub doesn't have to poll. */
+  if (window.parent !== window) {
+    window.parent.postMessage(
+      { channel: "ach-save-bridge", action: "ready", host: location.host }, "*"
+    );
+  }
+})();
+</script>
+<p style="font:14px system-ui;color:#666">
+  Save bridge for Arcade Campus Hub. Nothing to see here.
+</p>
+</body>
+</html>
