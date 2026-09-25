@@ -33,6 +33,14 @@
   var ALLOWED = [
     "https://arcadecampushub.online",
     "https://www.arcadecampushub.online",
+    "https://nos-and-stealzers.github.io",
+    "https://arcadecampushub.github.io",
+    "https://securlyfex.online",
+    "https://www.securlyfex.online",
+    "https://securlyfex.site",
+    "https://www.securlyfex.site",
+    "https://securly.site",
+    "https://www.securly.site",
     "http://localhost:8787",
     "http://127.0.0.1:8787"
   ];
@@ -58,12 +66,26 @@
 
   var MAX_VALUE = 512 * 1024;     // skip anything absurd, per key
 
+  /* The arcade's OWN app data lives under these prefixes on its origin. When
+     this bridge runs at the arcade root (for self-hosted games), a snapshot
+     must NOT sweep up the hub's favorites/settings/session — that would put
+     app state into a game-save row and a restore could clobber it. Games never
+     use these prefixes, so filtering them is safe on every origin. */
+  var APP_PREFIXES = ["ach:", "ach-", "sb-", "supabase."];
+  function isAppKey(key) {
+    for (var i = 0; i < APP_PREFIXES.length; i++) {
+      if (key.indexOf(APP_PREFIXES[i]) === 0) return true;
+    }
+    return false;
+  }
+
   function snapshot() {
     var out = {}, skipped = 0;
     try {
       for (var i = 0; i < localStorage.length; i++) {
         var key = localStorage.key(i);
         if (key === null) continue;
+        if (isAppKey(key)) continue;      // never back up the hub's own state
         var value = localStorage.getItem(key);
         if (value === null) continue;
         if (value.length > MAX_VALUE) { skipped++; continue; }
@@ -127,6 +149,7 @@
     var written = 0, kept = 0;
     try {
       Object.keys(data || {}).forEach(function (key) {
+        if (isAppKey(key)) { kept++; return; }   // never let a save touch app state
         var existing = localStorage.getItem(key);
         if (existing !== null && !overwrite) { kept++; return; }
         try { localStorage.setItem(key, String(data[key])); written++; }
