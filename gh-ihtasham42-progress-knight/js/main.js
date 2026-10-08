@@ -1021,7 +1021,7 @@ function update() {
 }
 
 function resetGameData() {
-    localStorage.clear()
+    localStorage.removeItem("gameDataSave")
     location.reload()
 }
 

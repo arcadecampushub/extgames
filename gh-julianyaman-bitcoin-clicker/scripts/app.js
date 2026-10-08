@@ -404,7 +404,8 @@ String.prototype.optimizeNumber = Game.optimizeNumber
 Game.resetGame = function () {
   Game.stopBsec()
   localStorage.setItem("bitcoins", "0")
-  localStorage.clear()
+  items.forEach(function (it) { localStorage.removeItem(it.name) })
+  localStorage.removeItem("bitcoins")
   location.reload()
 }
 

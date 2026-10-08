@@ -435,7 +435,7 @@ Core.pad = function(number){
 
 Core.save = function(silent){
 	if(!localStorage || !JSON || typeof JSON.stringify !== 'function') return false
-	localStorage.clear()
+	Object.keys(localStorage).forEach(function(k){ if(k.indexOf('dev-') === 0) localStorage.removeItem(k) })
 	localStorage.setItem('dev-savedDate', new Date())
 	// Cuántos botones de empezar proyecto tenemos
 	localStorage.setItem('dev-stats-parallel-projects', Stats.parallelProjects)
@@ -784,7 +784,7 @@ Core.addListeners = function(){
 	Core._('#reset').addEventListener('click', function(){
 		if(confirm('ALL PROGRESS WILL BE LOST, are you sure you want to RESET?')){
 			if(localStorage){
-				localStorage.clear()
+				Object.keys(localStorage).forEach(function(k){ if(k.indexOf('dev-') === 0) localStorage.removeItem(k) })
 			}
 			window.location.reload()
 		}
